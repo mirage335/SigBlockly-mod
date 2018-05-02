@@ -1,0 +1,12 @@
+[submodule "_lib/ubiquitous_bash"]
+	path = _lib/ubiquitous_bash
+	url = git@github.com:mirage335/ubiquitous_bash.git
+[submodule "_lib/SigBlockly"]
+	path = _lib/SigBlockly
+	url = git@github.com:mirage335/SigBlockly.git
+[submodule "_lib/blockly"]
+	path = _lib/blockly
+	url = git@github.com:google/blockly.git
+[submodule "_lib/closure-library"]
+	path = _lib/closure-library
+	url = git@github.com:google/closure-library.git
