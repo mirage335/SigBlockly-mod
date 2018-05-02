@@ -1,0 +1,29 @@
+diff --git a/demos/code/index.html b/demos/code/index.html
+index 3210db5..36425f9 100644
+--- a/demos/code/index.html
++++ b/demos/code/index.html
+@@ -9,6 +9,7 @@
+   <script src="../../blockly_compressed.js"></script>
+   <script src="../../blocks_compressed.js"></script>
+   <script src="../../javascript_compressed.js"></script>
++  <script src="../../c_compressed.js"></script>
+   <script src="../../python_compressed.js"></script>
+   <script src="../../php_compressed.js"></script>
+   <script src="../../lua_compressed.js"></script>
+@@ -36,6 +37,8 @@
+             <td class="tabmin">&nbsp;</td>
+             <td id="tab_javascript" class="taboff">JavaScript</td>
+             <td class="tabmin">&nbsp;</td>
++            <td id="tab_c" class="taboff">C</td>
++            <td class="tabmin">&nbsp;</td>
+             <td id="tab_python" class="taboff">Python</td>
+             <td class="tabmin">&nbsp;</td>
+             <td id="tab_php" class="taboff">PHP</td>
+@@ -67,6 +70,7 @@
+   </table>
+   <div id="content_blocks" class="content"></div>
+   <pre id="content_javascript" class="content"></pre>
++  <pre id="content_c" class="content"></pre>
+   <pre id="content_python" class="content"></pre>
+   <pre id="content_php" class="content"></pre>
+   <pre id="content_lua" class="content"></pre>
