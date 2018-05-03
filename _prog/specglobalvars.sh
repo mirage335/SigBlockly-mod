@@ -5,9 +5,11 @@ export SigBlockly_mod="$scriptLib"/SigBlockly
 export modSource="$blockly_orig"
 #export modSource="$SigBlockly_mod"
 
-export generatorTemplate=python
-export generatorSource="$modSource"/generators/"$generatorTemplate"
-export generatorSourceEntry="$modSource"/generators/"$generatorTemplate".js
+export modLanguageName=python
+export modLanguageNameProper=Python
+
+export generatorSource=generators/"$modLanguageName"
+export generatorSourceEntry=generators/"$modLanguageName".js
 
 
 export scriptModules="$scriptLib"/modules
