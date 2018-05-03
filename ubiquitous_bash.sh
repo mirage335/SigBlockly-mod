@@ -10474,8 +10474,17 @@ _prepare_ssh() {
 	export sshLocalSSH="$sshLocal"/ssh
 }
 
+export blockly_orig="$scriptLib"/blockly
+export SigBlockly_mod="$scriptLib"/SigBlockly
+
+#modSource == original files to modify
+export modSource="$blockly_orig"
+#export modSource="$SigBlockly_mod"
+
 export generatorTemplate=python
-export generatorSource="$scriptAbsoluteFolder"/_lib/blockly/generators/"$generatorTemplate"
+export generatorSource="$modSource"/generators/"$generatorTemplate"
+export generatorSourceEntry="$modSource"/generators/"$generatorTemplate".js
+
 
 export scriptModules="$scriptLib"/modules
 
@@ -10485,14 +10494,10 @@ export spliceUnidiff="$scriptModules"/splice/unidiff
 export spliceTmp="$safeTmp"/splice
 export spliceTmpUnidiff="$spliceTmp"/unidiff
 
-export blockly_orig="$scriptLib"/blockly
-export SigBlockly_mod="$scriptLib"/SigBlockly
-
 _prepare_splice() {
 	mkdir -p "$spliceTmp"
 	mkdir -p "$spliceTmpUnidiff"
 }
-
 
 
 
@@ -11778,26 +11783,37 @@ _construct_generator_sequence() {
 	local languageNameProper
 	languageNameProper="$2"
 	
-	generatorDestination="$scriptLocal"/templates/"$languageName"
+	modDestination="$scriptLocal"/templates/"$languageName"
 	
-	! mkdir -p "$generatorDestination" && return 1
-	rsync -q -ax --exclude "/.git"  "$generatorSource"/. "$generatorDestination"/
+	! mkdir -p "$modDestination" && _stop 1
+	! mkdir -p "$modDestination"/demos/code && _stop 1
+	! mkdir -p "$modDestination"/generators/"$languageName" && _stop 1
 	
+	rsync -q -ax --exclude "/.git"  "$modSource"/build.py "$modDestination"/
 	
-	cd "$generatorDestination"/
+	rsync -q -ax --exclude "/.git"  "$modSource"/demos/code/index.html "$modDestination"/demos/code/
+	rsync -q -ax --exclude "/.git"  "$modSource"/demos/code/code.js "$modDestination"/demos/code/
 	
-	#Splice
+	rsync -q -ax --exclude "/.git" "$generatorSource"/. "$modDestination"/generators/"$languageName"/
+	rsync -q -ax --exclude "/.git"  "$generatorSourceEntry" "$modDestination"/generators/"$languageName".js
+	
+	#Splice.
 	mkdir -p "$spliceTmpUnidiff"/language
 	_splice_generator_filter "$languageName" "$languageNameProper" "$spliceUnidiff"/language/build.py.patch > "$spliceTmpUnidiff"/language/build.py.patch
 	
-	mkdir -p "$spliceTmpUnidiff"/language/generators/demos/code
-	_splice_generator_filter "$languageName" "$languageNameProper" "$spliceTmpUnidiff"/language/generators/demos/code/code.js > "$spliceTmpUnidiff"/language/generators/demos/code/code.js
-	_splice_generator_filter "$languageName" "$languageNameProper" "$spliceTmpUnidiff"/language/generators/demos/code/index.html > "$spliceTmpUnidiff"/language/generators/demos/code/index.html
+	mkdir -p "$spliceTmpUnidiff"/language/demos/code
+	_splice_generator_filter "$languageName" "$languageNameProper" "$spliceUnidiff"/language/demos/code/code.js.patch > "$spliceTmpUnidiff"/language/demos/code/code.js.patch
+	_splice_generator_filter "$languageName" "$languageNameProper" "$spliceUnidiff"/language/demos/code/index.html.patch > "$spliceTmpUnidiff"/language/demos/code/index.html.patch
 	
 	#Patch.
+	! cd "$modDestination"/ && _stop 1
+	! git check-ignore . && _stop 1
+	
+	_gitNew
+	
 	git apply "$spliceTmpUnidiff"/language/build.py.patch
-	git apply "$spliceTmpUnidiff"/language/generators/demos/code/code.js
-	git apply "$spliceTmpUnidiff"/language/generators/demos/code/index.html
+	git apply "$spliceTmpUnidiff"/language/demos/code/code.js.patch
+	git apply "$spliceTmpUnidiff"/language/demos/code/index.html.patch
 	
 	
 	

@@ -1,6 +1,14 @@
+export blockly_orig="$scriptLib"/blockly
+export SigBlockly_mod="$scriptLib"/SigBlockly
+
+#modSource == original files to modify
+export modSource="$blockly_orig"
+#export modSource="$SigBlockly_mod"
+
 export generatorTemplate=python
-export generatorSource="$scriptAbsoluteFolder"/_lib/blockly/generators/"$generatorTemplate"
-export generatorSourceEntry="$scriptAbsoluteFolder"/_lib/blockly/generators/"$generatorTemplate".js
+export generatorSource="$modSource"/generators/"$generatorTemplate"
+export generatorSourceEntry="$modSource"/generators/"$generatorTemplate".js
+
 
 export scriptModules="$scriptLib"/modules
 
@@ -10,11 +18,7 @@ export spliceUnidiff="$scriptModules"/splice/unidiff
 export spliceTmp="$safeTmp"/splice
 export spliceTmpUnidiff="$spliceTmp"/unidiff
 
-export blockly_orig="$scriptLib"/blockly
-export SigBlockly_mod="$scriptLib"/SigBlockly
-
 _prepare_splice() {
 	mkdir -p "$spliceTmp"
 	mkdir -p "$spliceTmpUnidiff"
 }
-
