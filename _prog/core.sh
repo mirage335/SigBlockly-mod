@@ -130,3 +130,11 @@ _augment_generator_c() {
 	_construct_generator_c "$SigBlockly_mod"
 }
 
+_construct_generator_bash() {
+	_construct_generator "bash" "BASH" "$@"
+}
+
+_augment_generator_bash() {
+	_construct_generator_bash "$SigBlockly_mod"
+}
+
