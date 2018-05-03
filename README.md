@@ -14,34 +14,6 @@ Language generators have been created by copying an existing generator, and repl
 
 Previously implemented over blockly commit 7679d227df8f62a12316334ee708d4a9a800ef17 .
 
-## build.py
-* add self.gen_generator("c")
-
-## generators/c.js
-* copy from generators/python.js
-* sed -i 's/Blockly\.Python/Blockly\.c/g' c.js
-* sed -i 's/Blockly.Generator('\''Python'\'')/Blockly.Generator('\''c'\'')/g' ./c.js
-
-## generators/c/.
-* copy from generators/python/.
-* sed -i 's/Blockly\.Python/Blockly\.c/g' *.js
-
-## demos/code/code.js
-* add
-Code.TABS_ = [ 'c' ];
-* add
-} else if (content.id == 'content_c') {
-Code.attemptCodeGeneration(Blockly.c, 'c');
-
-## demos/code/index.html
-* add
-<script src="../../c_compressed.js"></script>
-* add
-<td class="tabmin">&nbsp;</td>
-<td id="tab_c" class="taboff">C</td>
-* add
-<pre id="content_c" class="content"></pre>
-
 
 # Reference
 https://github.com/google/blockly/tree/7679d227df8f62a12316334ee708d4a9a800ef17
