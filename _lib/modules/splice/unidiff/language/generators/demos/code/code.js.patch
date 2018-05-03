@@ -7,7 +7,7 @@ index ed1d520..6164c4d 100644
   * @private
   */
 -Code.TABS_ = ['blocks', 'javascript', 'php', 'python', 'dart', 'lua', 'xml'];
-+Code.TABS_ = ['blocks', 'javascript', 'c', 'php', 'python', 'dart', 'lua', 'xml'];
++Code.TABS_ = ['blocks', 'javascript', '$languageName', 'php', 'python', 'dart', 'lua', 'xml'];
  
  Code.selected = 'blocks';
  
@@ -15,8 +15,8 @@ index ed1d520..6164c4d 100644
      xmlTextarea.focus();
    } else if (content.id == 'content_javascript') {
      Code.attemptCodeGeneration(Blockly.JavaScript, 'js');
-+  } else if (content.id == 'content_c') {
-+    Code.attemptCodeGeneration(Blockly.c, 'c');
++  } else if (content.id == 'content_$languageName') {
++    Code.attemptCodeGeneration(Blockly.$languageName, '$languageName');
    } else if (content.id == 'content_python') {
      Code.attemptCodeGeneration(Blockly.Python, 'py');
    } else if (content.id == 'content_php') {

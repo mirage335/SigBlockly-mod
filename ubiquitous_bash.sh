@@ -10463,6 +10463,14 @@ _prepare_ssh() {
 	export sshLocalSSH="$sshLocal"/ssh
 }
 
+export generatorTemplate=Python
+export generatorSource="$scriptAbsoluteFolder"/_lib/blockly/generators/"$generatorTemplate"
+
+export scriptModules="$scriptLib"/modules
+
+export blockly_orig="$scriptLib"/blockly
+export SigBlockly_mod="$scriptLib"/SigBlockly
+
 
 
 
@@ -11332,7 +11340,9 @@ _preserveVar() {
 }
 
 
-
+_test_prog() {
+	_getDep rsync
+}
 
 #####Installation
 
@@ -11694,6 +11704,82 @@ _package() {
 }
 
 ##### Core
+
+
+_update_SigBlockly() {
+	local localFunctionEntryPWD
+	localFunctionEntryPWD="$PWD"
+	
+	! cd "$SigBlockly_mod" && return 1
+	
+	git reset --hard
+	
+	#git pull upstream master
+	
+	#https://stackoverflow.com/questions/15232000/git-ignore-files-during-merge
+	#https://stackoverflow.com/questions/41101998/git-checkout-vs-git-checkout
+	git merge --no-ff --no-commit upstream/master
+	git reset HEAD LICENSE
+	git reset HEAD README.md
+	git checkout -- LICENSE
+	git checkout -- README.md
+	#git commit -m "merged <merge-branch>"
+	
+	
+	cd "$localFunctionEntryPWD"
+}
+
+#languageName == "$1"
+#languageNameProper == "$2"
+#spliceCodeUnidiff == "$3"
+_splice_generator() {
+	local languageName
+	languageName="$1"
+	local languageNameProper
+	languageNameProper="$2"
+	local spliceCodeUnidiff
+	spliceCodeUnidiff="$3"
+	
+	cat "$3" | sed 's/$languageNameProper/'"$languageNameProper"'/g' | sed 's/$languageName/'"$languageName"'/g'
+}
+
+
+_construct_generator_sequence() {
+	_start
+	
+	local localFunctionEntryPWD
+	localFunctionEntryPWD="$PWD"
+	
+	local languageName
+	languageName="$1"
+	local languageNameProper
+	languageNameProper="$2"
+	
+	generatorDestination="$scriptLocal"/templates/"$languageName"
+	
+	mkdir "$generatorDestination"
+	rsync -q -ax --exclude "/.git"  "$generatorSource"/. "$generatorDestination"/
+	
+	
+	cd "$generatorDestination"/
+	
+	#Patch.
+	
+	
+	
+	cd "$localFunctionEntryPWD"
+	
+	
+	_stop
+}
+
+_construct_generator() {
+	_construct_generator_sequence "$@"
+}
+
+_construct_generator_c() {
+	_construct_generator "c" "C" "$@"
+}
 
 
 #####Program
