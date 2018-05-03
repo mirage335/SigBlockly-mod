@@ -10477,10 +10477,6 @@ _prepare_ssh() {
 export blockly_orig="$scriptLib"/blockly
 export SigBlockly_mod="$scriptLib"/SigBlockly
 
-#modSource == original files to modify
-export modSource="$blockly_orig"
-#export modSource="$SigBlockly_mod"
-
 export modLanguageName=python
 export modLanguageNameProper=Python
 
@@ -10491,14 +10487,14 @@ export generatorSourceEntry=generators/"$modLanguageName".js
 export scriptModules="$scriptLib"/modules
 
 export splice="$scriptModules"/splice
-export spliceUnidiff="$scriptModules"/splice/unidiff
+export spliceGitdiff="$scriptModules"/splice/gitdiff
 
 export spliceTmp="$safeTmp"/splice
-export spliceTmpUnidiff="$spliceTmp"/unidiff
+export spliceTmpGitdiff="$spliceTmp"/gitdiff
 
 _prepare_splice() {
 	mkdir -p "$spliceTmp"
-	mkdir -p "$spliceTmpUnidiff"
+	mkdir -p "$spliceTmpGitdiff"
 }
 
 
@@ -11767,20 +11763,23 @@ _modTransfer() {
 
 #languageName == "$1"
 #languageNameProper == "$2"
-#spliceCodeUnidiff == "$3"
+#spliceCodeGitdiff == "$3"
 _splice_generator_filter() {
 	local languageName
 	languageName="$1"
 	local languageNameProper
 	languageNameProper="$2"
-	local spliceCodeUnidiff
-	spliceCodeUnidiff="$3"
+	local spliceCodeGitdiff
+	spliceCodeGitdiff="$3"
 	
 	sed -i 's/$languageNameProper/'"$languageNameProper"'/g' "$3"
 	sed -i 's/$languageName/'"$languageName"'/g' "$3"
 }
 
-
+#"$1" == languageName
+#"$2" == languageNameProper
+#"$3" == modSource (default, $blockly_orig)
+#"$4" == modDestination  (default, "$scriptLocal"/templates/"$languageName")
 _construct_generator_sequence() {
 	_start
 	_prepare_splice
@@ -11793,8 +11792,13 @@ _construct_generator_sequence() {
 	local languageNameProper
 	languageNameProper="$2"
 	
+	#modSource == original files to modify
+	export modSource="$blockly_orig"
+	#export modSource="$SigBlockly_mod"
 	export modDestination="$scriptLocal"/templates/"$languageName"
 	
+	[[ "$3" != "" ]] && export modSource="$3"
+	[[ "$4" != "" ]] && export modDestination="$4"
 	
 	#Files.
 	! mkdir -p "$modDestination" && _stop 1
@@ -11813,11 +11817,11 @@ _construct_generator_sequence() {
 	mv "$modDestination"/"$generatorSource".js "$modDestination"/generators/"$languageName".js
 	
 	#Splice.
-	_modTransfer "$spliceUnidiff" "$spliceTmpUnidiff" .
+	_modTransfer "$spliceGitdiff" "$spliceTmpGitdiff" .
 	
-	_splice_generator_filter "$languageName" "$languageNameProper" "$spliceTmpUnidiff"/language/build.py.patch
-	_splice_generator_filter "$languageName" "$languageNameProper" "$spliceTmpUnidiff"/language/demos/code/code.js.patch
-	_splice_generator_filter "$languageName" "$languageNameProper" "$spliceTmpUnidiff"/language/demos/code/index.html.patch
+	_splice_generator_filter "$languageName" "$languageNameProper" "$spliceTmpGitdiff"/language/build.py.patch
+	_splice_generator_filter "$languageName" "$languageNameProper" "$spliceTmpGitdiff"/language/demos/code/code.js.patch
+	_splice_generator_filter "$languageName" "$languageNameProper" "$spliceTmpGitdiff"/language/demos/code/index.html.patch
 	
 	#Track.
 	! cd "$modDestination"/ && _stop 1
@@ -11832,9 +11836,9 @@ _construct_generator_sequence() {
 	find "$modDestination"/generators/"$languageName" -name '*.js' -exec sed -i 's/Blockly\.'"$modLanguageNameProper"'/Blockly\.'"$languageName"'/g' {} \;
 	
 	#Patch.
-	git apply "$spliceTmpUnidiff"/language/build.py.patch
-	git apply "$spliceTmpUnidiff"/language/demos/code/code.js.patch
-	git apply "$spliceTmpUnidiff"/language/demos/code/index.html.patch
+	git apply "$spliceTmpGitdiff"/language/build.py.patch
+	git apply "$spliceTmpGitdiff"/language/demos/code/code.js.patch
+	git apply "$spliceTmpGitdiff"/language/demos/code/index.html.patch
 	
 	
 	
@@ -11850,6 +11854,10 @@ _construct_generator() {
 
 _construct_generator_c() {
 	_construct_generator "c" "C" "$@"
+}
+
+_augment_generator_c() {
+	_construct_generator_c "$SigBlockly_mod"
 }
 
 

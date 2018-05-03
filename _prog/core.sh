@@ -46,7 +46,10 @@ _splice_generator_filter() {
 	sed -i 's/$languageName/'"$languageName"'/g' "$3"
 }
 
-
+#"$1" == languageName
+#"$2" == languageNameProper
+#"$3" == modSource (default, $blockly_orig)
+#"$4" == modDestination  (default, "$scriptLocal"/templates/"$languageName")
 _construct_generator_sequence() {
 	_start
 	_prepare_splice
@@ -64,6 +67,8 @@ _construct_generator_sequence() {
 	#export modSource="$SigBlockly_mod"
 	export modDestination="$scriptLocal"/templates/"$languageName"
 	
+	[[ "$3" != "" ]] && export modSource="$3"
+	[[ "$4" != "" ]] && export modDestination="$4"
 	
 	#Files.
 	! mkdir -p "$modDestination" && _stop 1
@@ -119,5 +124,9 @@ _construct_generator() {
 
 _construct_generator_c() {
 	_construct_generator "c" "C" "$@"
+}
+
+_augment_generator_c() {
+	_construct_generator_c "$SigBlockly_mod"
 }
 
