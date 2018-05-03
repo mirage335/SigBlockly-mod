@@ -11827,6 +11827,8 @@ _construct_generator_sequence() {
 	
 	#Substitute.
 	sed -i 's/Blockly.Generator('\'''"$modLanguageNameProper"''\'')/Blockly.Generator('\'''"$languageName"''\'')/g' "$modDestination"/generators/"$languageName".js
+	sed -i 's/Blockly\.'"$modLanguageNameProper"'/Blockly\.'"$languageName"'/g' "$modDestination"/generators/"$languageName".js
+	
 	find "$modDestination"/generators/"$languageName" -name '*.js' -exec sed -i 's/Blockly\.'"$modLanguageNameProper"'/Blockly\.'"$languageName"'/g' {} \;
 	
 	#Patch.
