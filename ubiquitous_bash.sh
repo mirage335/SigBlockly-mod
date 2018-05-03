@@ -7528,8 +7528,18 @@ _test_devemacs() {
 	! [[ "$emacsDetectedVersion" -ge "24" ]] && echo emacs too old && _stop 1
 }
 
+_set_emacsFakeHomeSource() {
+	export emacsFakeHomeSource="$scriptLib"/app/emacs/home
+	if ! [[ -e "$emacsFakeHomeSource" ]]
+	then
+		export emacsFakeHomeSource="$scriptLib"/ubiquitous_bash/_lib/app/emacs/home
+	fi
+}
+
 _prepare_emacsDev_fakeHome() {
-	cp -a "$scriptLib"/app/emacs/home/. "$HOME"
+	_set_emacsFakeHomeSource
+	
+	cp -a "$emacsFakeHomeSource"/. "$HOME"
 }
 
 _emacsDev_sequence() {
@@ -7549,7 +7559,8 @@ _emacs() {
 }
 
 _emacsDev_edit_sequence() {
-	export appGlobalFakeHome="$scriptLib"/app/emacs/home
+	_set_emacsFakeHomeSource
+	export appGlobalFakeHome="$emacsFakeHomeSource"
 	
 	_editFakeHome emacs "$@"
 }
@@ -10463,13 +10474,24 @@ _prepare_ssh() {
 	export sshLocalSSH="$sshLocal"/ssh
 }
 
-export generatorTemplate=Python
+export generatorTemplate=python
 export generatorSource="$scriptAbsoluteFolder"/_lib/blockly/generators/"$generatorTemplate"
 
 export scriptModules="$scriptLib"/modules
 
+export splice="$scriptModules"/splice
+export spliceUnidiff="$scriptModules"/splice/unidiff
+
+export spliceTmp="$safeTmp"/splice
+export spliceTmpUnidiff="$spliceTmp"/unidiff
+
 export blockly_orig="$scriptLib"/blockly
 export SigBlockly_mod="$scriptLib"/SigBlockly
+
+_prepare_splice() {
+	mkdir -p "$spliceTmp"
+	mkdir -p "$spliceTmpUnidiff"
+}
 
 
 
@@ -11732,7 +11754,7 @@ _update_SigBlockly() {
 #languageName == "$1"
 #languageNameProper == "$2"
 #spliceCodeUnidiff == "$3"
-_splice_generator() {
+_splice_generator_filter() {
 	local languageName
 	languageName="$1"
 	local languageNameProper
@@ -11746,6 +11768,7 @@ _splice_generator() {
 
 _construct_generator_sequence() {
 	_start
+	_prepare_splice
 	
 	local localFunctionEntryPWD
 	localFunctionEntryPWD="$PWD"
@@ -11757,13 +11780,24 @@ _construct_generator_sequence() {
 	
 	generatorDestination="$scriptLocal"/templates/"$languageName"
 	
-	mkdir "$generatorDestination"
+	! mkdir -p "$generatorDestination" && return 1
 	rsync -q -ax --exclude "/.git"  "$generatorSource"/. "$generatorDestination"/
 	
 	
 	cd "$generatorDestination"/
 	
+	#Splice
+	mkdir -p "$spliceTmpUnidiff"/language
+	_splice_generator_filter "$languageName" "$languageNameProper" "$spliceUnidiff"/language/build.py.patch > "$spliceTmpUnidiff"/language/build.py.patch
+	
+	mkdir -p "$spliceTmpUnidiff"/language/generators/demos/code
+	_splice_generator_filter "$languageName" "$languageNameProper" "$spliceTmpUnidiff"/language/generators/demos/code/code.js > "$spliceTmpUnidiff"/language/generators/demos/code/code.js
+	_splice_generator_filter "$languageName" "$languageNameProper" "$spliceTmpUnidiff"/language/generators/demos/code/index.html > "$spliceTmpUnidiff"/language/generators/demos/code/index.html
+	
 	#Patch.
+	git apply "$spliceTmpUnidiff"/language/build.py.patch
+	git apply "$spliceTmpUnidiff"/language/generators/demos/code/code.js
+	git apply "$spliceTmpUnidiff"/language/generators/demos/code/index.html
 	
 	
 	
@@ -11774,7 +11808,7 @@ _construct_generator_sequence() {
 }
 
 _construct_generator() {
-	_construct_generator_sequence "$@"
+	"$scriptAbsoluteLocation" _construct_generator_sequence "$@"
 }
 
 _construct_generator_c() {

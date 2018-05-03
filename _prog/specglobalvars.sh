@@ -1,5 +1,6 @@
-export generatorTemplate=Python
+export generatorTemplate=python
 export generatorSource="$scriptAbsoluteFolder"/_lib/blockly/generators/"$generatorTemplate"
+export generatorSourceEntry="$scriptAbsoluteFolder"/_lib/blockly/generators/"$generatorTemplate".js
 
 export scriptModules="$scriptLib"/modules
 

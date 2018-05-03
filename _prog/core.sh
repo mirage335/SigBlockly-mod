@@ -53,19 +53,19 @@ _construct_generator_sequence() {
 	
 	generatorDestination="$scriptLocal"/templates/"$languageName"
 	
-	mkdir "$generatorDestination"
-	rsync -q -ax --exclude "/.git"  "$generatorSource"/. "$generatorDestination"/
-	
+	! mkdir -p "$generatorDestination" && return 1
+	rsync -q -ax --exclude "/.git" "$generatorSource"/. "$generatorDestination"/
+	cp -a  "$generatorSourceEntry" "$generatorDestination"/
 	
 	cd "$generatorDestination"/
 	
 	#Splice
 	mkdir -p "$spliceTmpUnidiff"/language
-	_splice_generator "$languageName" "$languageNameProper" "$spliceUnidiff"/language/build.py.patch > "$spliceTmpUnidiff"/language/build.py.patch
+	_splice_generator_filter "$languageName" "$languageNameProper" "$spliceUnidiff"/language/build.py.patch > "$spliceTmpUnidiff"/language/build.py.patch
 	
 	mkdir -p "$spliceTmpUnidiff"/language/generators/demos/code
-	_splice_generator "$languageName" "$languageNameProper" "$spliceTmpUnidiff"/language/generators/demos/code/code.js > "$spliceTmpUnidiff"/language/generators/demos/code/code.js
-	_splice_generator "$languageName" "$languageNameProper" "$spliceTmpUnidiff"/language/generators/demos/code/index.html > "$spliceTmpUnidiff"/language/generators/demos/code/index.html
+	_splice_generator_filter "$languageName" "$languageNameProper" "$spliceUnidiff"/language/generators/demos/code/code.js.patch > "$spliceTmpUnidiff"/language/generators/demos/code/code.js.patch
+	_splice_generator_filter "$languageName" "$languageNameProper" "$spliceUnidiff"/language/generators/demos/code/index.html.patch > "$spliceTmpUnidiff"/language/generators/demos/code/index.html.patch
 	
 	#Patch.
 	git apply "$spliceTmpUnidiff"/language/build.py.patch
@@ -81,7 +81,7 @@ _construct_generator_sequence() {
 }
 
 _construct_generator() {
-	_construct_generator_sequence "$@"
+	"$scriptAbsoluteLocation" _construct_generator_sequence "$@"
 }
 
 _construct_generator_c() {
