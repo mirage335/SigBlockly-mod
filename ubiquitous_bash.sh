@@ -11830,16 +11830,18 @@ _construct_generator_sequence() {
 	_gitNew
 	
 	#Substitute.
-	sed -i 's/Blockly.Generator('\'''"$modLanguageNameProper"''\'')/Blockly.Generator('\'''"$languageName"''\'')/g' "$modDestination"/generators/"$languageName".js
-	sed -i 's/Blockly\.'"$modLanguageNameProper"'/Blockly\.'"$languageName"'/g' "$modDestination"/generators/"$languageName".js
+	#sed -i 's/Blockly.Generator('\'''"$modLanguageNameProper"''\'')/Blockly.Generator('\'''"$languageName"''\'')/g' "$modDestination"/generators/"$languageName".js
+	#sed -i 's/Blockly\.'"$modLanguageNameProper"'/Blockly\.'"$languageName"'/g' "$modDestination"/generators/"$languageName".js
 	
-	find "$modDestination"/generators/"$languageName" -name '*.js' -exec sed -i 's/Blockly\.'"$modLanguageNameProper"'/Blockly\.'"$languageName"'/g' {} \;
+	#find "$modDestination"/generators/"$languageName" -name '*.js' -exec sed -i 's/Blockly\.'"$modLanguageNameProper"'/Blockly\.'"$languageName"'/g' {} \;
 	
 	#Patch.
-	git apply "$spliceTmpGitdiff"/language/build.py.patch
-	git apply "$spliceTmpGitdiff"/language/demos/code/code.js.patch
-	git apply "$spliceTmpGitdiff"/language/demos/code/index.html.patch
-	
+	#git apply "$spliceTmpGitdiff"/language/build.py.patch
+	#git apply "$spliceTmpGitdiff"/language/demos/code/code.js.patch
+	#git apply "$spliceTmpGitdiff"/language/demos/code/index.html.patch
+	patch -p1 < "$spliceTmpGitdiff"/language/build.py.patch
+	patch -p1 < "$spliceTmpGitdiff"/language/demos/code/code.js.patch
+	patch -p1 < "$spliceTmpGitdiff"/language/demos/code/index.html.patch
 	
 	
 	cd "$localFunctionEntryPWD"
@@ -11857,7 +11859,14 @@ _construct_generator_c() {
 }
 
 _augment_generator_c() {
-	_construct_generator_c "$SigBlockly_mod"
+	[[ -e "$scriptLocal"/templates/c ]] && return 1
+	
+	if ! _construct_generator_c "$SigBlockly_mod"
+	then
+		return 1
+	fi
+	
+	rsync -avx --exclude "/.git" "$scriptLocal"/templates/c/. "$SigBlockly_mod"/
 }
 
 _construct_generator_bash() {
@@ -11865,7 +11874,30 @@ _construct_generator_bash() {
 }
 
 _augment_generator_bash() {
-	_construct_generator_bash "$SigBlockly_mod"
+	[[ -e "$scriptLocal"/templates/bash ]] && return 1
+	
+	if ! _construct_generator_bash "$SigBlockly_mod"
+	then
+		return 1
+	fi
+	
+	rsync -avx --exclude "/.git" "$scriptLocal"/templates/bash/. "$SigBlockly_mod"/
+}
+
+_construct() {
+	[[ -e "$scriptLocal"/templates/c ]] && return 1
+	[[ -e "$scriptLocal"/templates/bash ]] && return 1
+	
+	_construct_generator_c
+	_construct_generator_bash
+}
+
+_augment() {
+	[[ -e "$scriptLocal"/templates/c ]] && return 1
+	[[ -e "$scriptLocal"/templates/bash ]] && return 1
+	
+	_augment_generator_c
+	_augment_generator_bash
 }
 
 
