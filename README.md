@@ -6,6 +6,8 @@ SigBlocklyMod
 
 Automatic integration of SigBlockly modifications over upstream Blockly repository, adding minimal support for C, Bash, and other languages.
 
+As a minimalistic approach to graphical programming, SigBlocklyMod and SigBlockly themselves are expected to continue to represent a reference point for developing graphical programming environments.
+
 # Maintenance
 Custom blocks and code generators used to minimally support C, Bash, and other languages, are kept under _lib/modules .
 
