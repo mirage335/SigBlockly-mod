@@ -10,3 +10,6 @@
 [submodule "_lib/closure-library"]
 	path = _lib/closure-library
 	url = git@github.com:google/closure-library.git
+[submodule "_lib/code-prettify"]
+	path = _lib/code-prettify
+	url = git@github.com:google/code-prettify.git

@@ -1,8 +1,9 @@
 export blockly_orig="$scriptLib"/blockly
 export SigBlockly_mod="$scriptLib"/SigBlockly
 
-export modLanguageName=python
-export modLanguageNameProper=Python
+# TODO Delete entirely if unnecessary.
+#export modLanguageName=python
+#export modLanguageNameProper=Python
 
 export generatorSource=generators/"$modLanguageName"
 export generatorSourceEntry=generators/"$modLanguageName".js
