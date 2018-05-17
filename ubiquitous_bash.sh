@@ -10477,14 +10477,17 @@ _prepare_ssh() {
 export blockly_orig="$scriptLib"/blockly
 export SigBlockly_mod="$scriptLib"/SigBlockly
 
-export modLanguageName=python
-export modLanguageNameProper=Python
+# TODO Delete entirely if unnecessary.
+#export modLanguageName=python
+#export modLanguageNameProper=Python
 
 export generatorSource=generators/"$modLanguageName"
 export generatorSourceEntry=generators/"$modLanguageName".js
 
 
 export scriptModules="$scriptLib"/modules
+
+export overlay="$scriptModules"/overlay
 
 export splice="$scriptModules"/splice
 export spliceGitdiff="$scriptModules"/splice/gitdiff
@@ -11730,6 +11733,44 @@ _package() {
 
 ##### Core
 
+_refresh_overlay() {
+	_safeRMR "$scriptModules"/overlay/
+	
+	mkdir -p "$overlay"/
+	cp -a "$SigBlockly_mod"/_code.html "$overlay"/
+	cp -a "$SigBlockly_mod"/_blockfactory.html "$overlay"/
+	
+	mkdir -p "$overlay"/blocks/
+	cp -a "$SigBlockly_mod"/blocks/arbitrary.js "$overlay"/blocks/arbitrary.js
+	
+	mkdir -p "$overlay"/generators/bash/
+	mkdir -p "$overlay"/generators/c/
+	cp -a "$SigBlockly_mod"/generators/bash/. "$overlay"/generators/bash/
+	cp -a "$SigBlockly_mod"/generators/c/. "$overlay"/generators/c/
+	
+	mkdir -p "$overlay"/generators/bash/
+	mkdir -p "$overlay"/generators/c/
+	mkdir -p "$overlay"/generators/dart/
+	mkdir -p "$overlay"/generators/javascript/
+	mkdir -p "$overlay"/generators/lua/
+	mkdir -p "$overlay"/generators/php/
+	mkdir -p "$overlay"/generators/python/
+	cp -a "$SigBlockly_mod"/generators/bash/arbitrary.js "$overlay"/generators/bash/
+	cp -a "$SigBlockly_mod"/generators/c/arbitrary.js "$overlay"/generators/c/
+	cp -a "$SigBlockly_mod"/generators/dart/arbitrary.js "$overlay"/generators/dart/
+	cp -a "$SigBlockly_mod"/generators/javascript/arbitrary.js "$overlay"/generators/javascript/
+	cp -a "$SigBlockly_mod"/generators/lua/arbitrary.js "$overlay"/generators/lua/
+	cp -a "$SigBlockly_mod"/generators/php/arbitrary.js "$overlay"/generators/php/
+	cp -a "$SigBlockly_mod"/generators/python/arbitrary.js "$overlay"/generators/python/
+	
+	mkdir -p "$overlay"/demos/code/
+	cp -a "$SigBlockly_mod"/demos/code/. "$overlay"/demos/code/
+}
+
+# TODO: Not implemented.
+_apply_overlay() {
+	true
+}
 
 _update_SigBlockly() {
 	local localFunctionEntryPWD

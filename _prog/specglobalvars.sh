@@ -11,6 +11,8 @@ export generatorSourceEntry=generators/"$modLanguageName".js
 
 export scriptModules="$scriptLib"/modules
 
+export overlay="$scriptModules"/overlay
+
 export splice="$scriptModules"/splice
 export spliceGitdiff="$scriptModules"/splice/gitdiff
 
