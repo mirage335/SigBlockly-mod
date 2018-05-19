@@ -118,3 +118,41 @@ Blockly.Blocks['blockly_separator'] = {
  this.setHelpUrl("");
   }
 };
+
+Blockly.Blocks['arbitrary_converter'] = {
+  init: function() {
+    this.appendValueInput("content")
+        .setCheck(null);
+    this.setPreviousStatement(true, null);
+    this.setNextStatement(true, null);
+    this.setColour(315);
+ this.setTooltip("");
+ this.setHelpUrl("");
+  }
+};
+
+Blockly.Blocks['arbitrary_deconverter'] = {
+  init: function() {
+    this.appendStatementInput("NAME")
+        .setCheck(null);
+    this.setInputsInline(true);
+    this.setOutput(true, null);
+    this.setColour(315);
+ this.setTooltip("");
+ this.setHelpUrl("");
+  }
+};
+
+Blockly.Blocks['functions_return'] = {
+  init: function() {
+    this.appendValueInput("varName")
+        .setCheck(null)
+        .appendField("return");
+    this.setInputsInline(true);
+    this.setPreviousStatement(true, null);
+    this.setNextStatement(true, null);
+    this.setColour(315);
+ this.setTooltip("");
+ this.setHelpUrl("");
+  }
+};

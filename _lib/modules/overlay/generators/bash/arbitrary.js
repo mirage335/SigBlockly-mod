@@ -50,3 +50,27 @@ Blockly.bash['blockly_separator'] = function(block) {
   var code = '';
   return code;
 };
+
+Blockly.bash['arbitrary_converter'] = function(block) {
+  var value_content = Blockly.bash.valueToCode(block, 'content', Blockly.bash.ORDER_NONE);
+  var code = value_content + '\n';
+  return code;
+};
+
+Blockly.bash['functions_return'] = function(block) {
+  var value_varname = Blockly.bash.valueToCode(block, 'varName', Blockly.bash.ORDER_NONE) || '';
+  if (value_varname != '') {
+    value_varname = ' ' + value_varname;
+  }
+  var code = "return" + value_varname + "\n";
+  return code;
+};
+
+Blockly.bash['arbitrary_deconverter'] = function(block) {
+  var statements_name = Blockly.bash.statementToCode(block, 'NAME');
+  var code = statements_name;
+  //code = code.replace(/;\n/g, "");
+  code = code.trim();
+  //code = code.replace(/\n\n/g, " ");
+  return [code, Blockly.bash.ORDER_ATOMIC];
+};

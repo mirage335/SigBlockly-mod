@@ -37,7 +37,7 @@ Blockly.Lua['arbitrary_code'] = function(block) {
 Blockly.Lua['arbitrary_input'] = function(block) {
   var text_arbitrarycode = block.getFieldValue('arbitraryInput');
   var code = text_arbitrarycode;
-  return [code, Blockly.bash.ORDER_ATOMIC];
+  return [code, Blockly.Lua.ORDER_ATOMIC];
 };
 
 Blockly.Lua['blockly_comment'] = function(block) {
@@ -49,4 +49,28 @@ Blockly.Lua['blockly_comment'] = function(block) {
 Blockly.Lua['blockly_separator'] = function(block) {
   var code = '';
   return code;
+};
+
+Blockly.Lua['arbitrary_converter'] = function(block) {
+  var value_content = Blockly.Lua.valueToCode(block, 'content', Blockly.Lua.ORDER_NONE);
+  var code = value_content + ';' + '\n';
+  return code;
+};
+
+Blockly.Lua['functions_return'] = function(block) {
+  var value_varname = Blockly.Lua.valueToCode(block, 'varName', Blockly.Lua.ORDER_NONE) || '';
+  if (value_varname != '') {
+    value_varname = ' ' + value_varname;
+  }
+  var code = "return" + value_varname + ";\n";
+  return code;
+};
+
+Blockly.Lua['arbitrary_deconverter'] = function(block) {
+  var statements_name = Blockly.Lua.statementToCode(block, 'NAME');
+  var code = statements_name;
+  //code = code.replace(/;\n/g, "");
+  code = code.trim();
+  //code = code.replace(/\n\n/g, " ");
+  return [code, Blockly.Lua.ORDER_ATOMIC];
 };

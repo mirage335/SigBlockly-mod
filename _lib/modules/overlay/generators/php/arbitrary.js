@@ -2,7 +2,7 @@
  * Visual Blocks Language
  *
  * Copyright 2012 Google Inc.
- * http://blockly.googlecode.com/
+ * http://blockly.googlecode.PHPom/
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@
 
 /**
  * @fileoverview Generating PHP for text blocks.
- * @author q.neutron@gmail.com (Quynh Neutron)
+ * @author q.neutron@gmail.PHPom (Quynh Neutron)
  */
 'use strict';
 
@@ -37,7 +37,7 @@ Blockly.PHP['arbitrary_code'] = function(block) {
 Blockly.PHP['arbitrary_input'] = function(block) {
   var text_arbitrarycode = block.getFieldValue('arbitraryInput');
   var code = text_arbitrarycode;
-  return [code, Blockly.bash.ORDER_ATOMIC];
+  return [code, Blockly.PHP.ORDER_ATOMIC];
 };
 
 Blockly.PHP['blockly_comment'] = function(block) {
@@ -49,4 +49,28 @@ Blockly.PHP['blockly_comment'] = function(block) {
 Blockly.PHP['blockly_separator'] = function(block) {
   var code = '';
   return code;
+};
+
+Blockly.PHP['arbitrary_converter'] = function(block) {
+  var value_content = Blockly.PHP.valueToCode(block, 'content', Blockly.PHP.ORDER_NONE);
+  var code = value_content + ';' + '\n';
+  return code;
+};
+
+Blockly.PHP['functions_return'] = function(block) {
+  var value_varname = Blockly.PHP.valueToCode(block, 'varName', Blockly.PHP.ORDER_NONE) || '';
+  if (value_varname != '') {
+    value_varname = ' ' + value_varname;
+  }
+  var code = "return" + value_varname + ";\n";
+  return code;
+};
+
+Blockly.PHP['arbitrary_deconverter'] = function(block) {
+  var statements_name = Blockly.PHP.statementToCode(block, 'NAME');
+  var code = statements_name;
+  code = code.replace(/;\n/g, "");
+  code = code.trim();
+  //code = code.replace(/\n\n/g, " ");
+  return [code, Blockly.PHP.ORDER_ATOMIC];
 };
