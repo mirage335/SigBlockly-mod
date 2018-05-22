@@ -28,6 +28,7 @@ goog.provide('Blockly.bash.procedures');
 
 goog.require('Blockly.bash');
 
+Blockly.Generator.prototype.INDENT = '	';
 
 Blockly.bash['procedures_defreturn'] = function(block) {
   // Define a procedure with a return value.
@@ -54,7 +55,7 @@ Blockly.bash['procedures_defreturn'] = function(block) {
     args[i] = Blockly.bash.variableDB_.getName(block.arguments_[i],
         Blockly.Variables.NAME_TYPE);
   }
-  var code = 'function ' + funcName + '(' + ') {\n' +
+  var code = funcName + '(' + ') {\n' +
       branch + returnValue + '}';
   code = Blockly.bash.scrub_(block, code);
   // Add % so as not to collide with helper functions in definitions list.

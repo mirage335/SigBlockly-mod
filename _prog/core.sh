@@ -9,6 +9,9 @@ _refresh_overlay() {
 	
 	mkdir -p "$overlay"/blocks/
 	cp -a "$SigBlockly_mod"/blocks/arbitrary.js "$overlay"/blocks/arbitrary.js
+	cp -a "$SigBlockly_mod"/blocks/bash.js "$overlay"/blocks/bash.js
+	cp -a "$SigBlockly_mod"/blocks/c.js "$overlay"/blocks/c.js
+	cp -a "$SigBlockly_mod"/blocks/ub.js "$overlay"/blocks/ub.js
 	
 	mkdir -p "$overlay"/generators/bash/
 	mkdir -p "$overlay"/generators/c/
@@ -22,8 +25,6 @@ _refresh_overlay() {
 	mkdir -p "$overlay"/generators/lua/
 	mkdir -p "$overlay"/generators/php/
 	mkdir -p "$overlay"/generators/python/
-	cp -a "$SigBlockly_mod"/generators/bash/arbitrary.js "$overlay"/generators/bash/
-	cp -a "$SigBlockly_mod"/generators/c/arbitrary.js "$overlay"/generators/c/
 	cp -a "$SigBlockly_mod"/generators/dart/arbitrary.js "$overlay"/generators/dart/
 	cp -a "$SigBlockly_mod"/generators/javascript/arbitrary.js "$overlay"/generators/javascript/
 	cp -a "$SigBlockly_mod"/generators/lua/arbitrary.js "$overlay"/generators/lua/

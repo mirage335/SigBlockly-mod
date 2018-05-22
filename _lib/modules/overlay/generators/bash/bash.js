@@ -27,6 +27,8 @@ goog.provide('Blockly.bash.bash');
 
 goog.require('Blockly.bash');
 
+Blockly.Generator.prototype.INDENT = '	';
+
 Blockly.bash['bash_case'] = function(block) {
   var value_casedata = Blockly.bash.valueToCode(block, 'caseData', Blockly.bash.ORDER_ATOMIC);
   var statements_caseactions = Blockly.bash.statementToCode(block, 'caseActions')  || '\n';
@@ -63,7 +65,7 @@ Blockly.bash['bash_getlist'] = function(block) {
 Blockly.bash['bash_addlist'] = function(block) {
   var variable_variablename = Blockly.bash.variableDB_.getName(block.getFieldValue('variableName'), Blockly.Variables.NAME_TYPE);
   var value_content = Blockly.bash.valueToCode(block, 'content', Blockly.bash.ORDER_ATOMIC);
-  var code = variable_variablename + '+=(' + value_content + ')\n';
+  var code = variable_variablename + '+=( ' + value_content + ' )\n';
   return code;
 };
 
@@ -117,6 +119,20 @@ Blockly.bash['bash_functions_arg'] = function(block) {
   return code;
 };
 
+Blockly.bash['bash_functioncall'] = function(block) {
+  var text_functioncall = block.getFieldValue('functionCall');
+  var statements_name = Blockly.bash.statementToCode(block, 'NAME');
+  var code = text_functioncall + ' ' + statements_name.substring(2) + '\n';
+  return code;
+};
 
+Blockly.bash['bash_here'] = function(block) {
+  Blockly.Generator.prototype.INDENT = '';
+  var text_heredocname = block.getFieldValue('hereDocName');
+  var statements_name = Blockly.bash.statementToCode(block, 'NAME');
+  Blockly.Generator.prototype.INDENT = '	';
+  var code = text_heredocname + '() {\n' + 'cat << CZXWXcRMTo8EmM8i4d\n' + statements_name + 'CZXWXcRMTo8EmM8i4d\n' + '}\n';
+  return code;
+};
 
 
