@@ -110,6 +110,7 @@ Blockly.Blocks['_ub_here_ssh_config'] = {
     this.appendDummyInput()
         .appendField("_here_ssh_config() {");
     this.appendDummyInput()
+        .appendField("          ")
         .appendField("cat << CZXWXcRMTo8EmM8i4d");
     this.appendStatementInput("NAME")
         .setCheck(null);
@@ -158,8 +159,8 @@ Blockly.Blocks['_ub_ssh_header'] = {
     this.appendDummyInput()
         .appendField("     ")
         .appendField(new Blockly.FieldDropdown([["",""], ["#","#"]]), "commentServerAliveCountMax")
-        .appendField("ServerServerAliveCountMax")
-        .appendField(new Blockly.FieldTextInput("18"), "ServerServerAliveCountMax");
+        .appendField("ServerAliveCountMax")
+        .appendField(new Blockly.FieldTextInput("18"), "ServerAliveCountMax");
     this.appendDummyInput()
         .appendField("     ")
         .appendField(new Blockly.FieldDropdown([["#","#"], ["",""]]), "commentPubkeyAuthentication")
@@ -210,7 +211,7 @@ Blockly.Blocks['_ub_ssh_host'] = {
     this.appendDummyInput()
         .appendField("Host ")
         .appendField(new Blockly.FieldTextInput("machine"), "hostname")
-        .appendField(new Blockly.FieldTextInput("-$netName*"), "netname");
+        .appendField(new Blockly.FieldTextInput("-$netName"), "netname");
     this.appendDummyInput()
         .appendField("     ")
         .appendField(new Blockly.FieldDropdown([["",""], ["#","#"]]), "commentProxyCommand")
@@ -418,5 +419,38 @@ Blockly.Blocks['_ub_autosshvars'] = {
   }
 };
 
+Blockly.Blocks['_ub_call_checklan'] = {
+  init: function() {
+    this.appendDummyInput()
+        .appendField("_check_LAN_")
+        .appendField(new Blockly.FieldTextInput("network"), "NAME");
+    this.setOutput(true, null);
+    this.setColour(315);
+ this.setTooltip("");
+ this.setHelpUrl("");
+  }
+};
 
+Blockly.Blocks['_ub_scriptabsolutefolder'] = {
+  init: function() {
+    this.appendDummyInput()
+        .appendField("\"$scriptAbsoluteFolder\"");
+    this.setOutput(true, null);
+ this.setTooltip("");
+ this.setHelpUrl("");
+  }
+};
 
+Blockly.Blocks['_ub_scriptabsolutefolder_statements'] = {
+  init: function() {
+    this.appendDummyInput()
+        .appendField("\"$scriptAbsoluteFolder\"")
+        .appendField(new Blockly.FieldTextInput("/_local/setups/appExe"), "NAME");
+    this.appendStatementInput("NAME")
+        .setCheck(null);
+    this.setPreviousStatement(true, null);
+    this.setNextStatement(true, null);
+ this.setTooltip("");
+ this.setHelpUrl("");
+  }
+}

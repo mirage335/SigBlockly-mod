@@ -131,8 +131,13 @@ Blockly.bash['bash_here'] = function(block) {
   var text_heredocname = block.getFieldValue('hereDocName');
   var statements_name = Blockly.bash.statementToCode(block, 'NAME');
   Blockly.Generator.prototype.INDENT = '	';
-  var code = text_heredocname + '() {\n' + 'cat << CZXWXcRMTo8EmM8i4d\n' + statements_name + 'CZXWXcRMTo8EmM8i4d\n' + '}\n';
+  var code = text_heredocname + '() {\n' + '	cat << CZXWXcRMTo8EmM8i4d\n' + statements_name + 'CZXWXcRMTo8EmM8i4d\n' + '}\n';
   return code;
 };
 
+Blockly.bash['_ub_call_checklan'] = function(block) {
+  var text_name = block.getFieldValue('NAME');
+  var code = '_check_LAN_' + text_name;
+  return [code, Blockly.bash.ORDER_ATOMIC];
+};
 

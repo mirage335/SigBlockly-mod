@@ -31,37 +31,43 @@ Blockly.Generator.prototype.INDENT = '	';
 
 Blockly.bash['ub_scriptabsolutelocation'] = function(block) {
   var statements_name = Blockly.bash.statementToCode(block, 'NAME');
-  var code = '\"$scriptAbsoluteLocation\" ' + statements_name.substring(2) + '\n';
+  statements_name = statements_name.replace(/\n$/g, '');
+  var code = '\"$scriptAbsoluteLocation\" ' + statements_name.substring(1) + '\n';
   return code;
 };
 
 Blockly.bash['ub_virt_editfakehome'] = function(block) {
   var statements_name = Blockly.bash.statementToCode(block, 'NAME');
-  var code = '_editFakeHome ' + statements_name.substring(2) + '\n';
+  statements_name = statements_name.replace(/\n$/g, '');
+  var code = '_editFakeHome ' + statements_name.substring(1) + '\n';
   return code;
 };
 
 Blockly.bash['ub_virt_userfakehome'] = function(block) {
   var statements_name = Blockly.bash.statementToCode(block, 'NAME');
-  var code = '_userFakeHome ' + statements_name.substring(2) + '\n';
+  statements_name = statements_name.replace(/\n$/g, '');
+  var code = '_userFakeHome ' + statements_name.substring(1) + '\n';
   return code;
 };
 
 Blockly.bash['ub_virt_userqemu'] = function(block) {
   var statements_name = Blockly.bash.statementToCode(block, 'NAME');
-  var code = '_userQemu ' + statements_name.substring(2) + '\n';
+  statements_name = statements_name.replace(/\n$/g, '');
+  var code = '_userQemu ' + statements_name.substring(1) + '\n';
   return code;
 };
 
 Blockly.bash['ub_virt_uservbox'] = function(block) {
   var statements_name = Blockly.bash.statementToCode(block, 'NAME');
-  var code = '_userVBox ' + statements_name.substring(2) + '\n';
+  statements_name = statements_name.replace(/\n$/g, '');
+  var code = '_userVBox ' + statements_name.substring(1) + '\n';
   return code;
 };
 
 Blockly.bash['ub_virt_userchroot'] = function(block) {
   var statements_name = Blockly.bash.statementToCode(block, 'NAME');
-  var code = '_userChRoot ' + statements_name.substring(2) + '\n';
+  statements_name = statements_name.replace(/\n$/g, '');
+  var code = '_userChRoot ' + statements_name.substring(1) + '\n';
   return code;
 };
 
@@ -69,7 +75,7 @@ Blockly.bash['_ub_here_ssh_config'] = function(block) {
   Blockly.Generator.prototype.INDENT = '';
   var statements_name = Blockly.bash.statementToCode(block, 'NAME');
   Blockly.Generator.prototype.INDENT = '	';
-  var code = '_here_ssh_config() {\n' + 'cat << CZXWXcRMTo8EmM8i4d\n' + statements_name + 'CZXWXcRMTo8EmM8i4d\n' + '}\n';
+  var code = '_here_ssh_config() {\n' + '	cat << CZXWXcRMTo8EmM8i4d\n' + statements_name + 'CZXWXcRMTo8EmM8i4d\n' + '}\n\n';
   return code;
 };
 
@@ -86,7 +92,7 @@ Blockly.bash['_ub_ssh_header'] = function(block) {
   var dropdown_commentserveraliveinterval = block.getFieldValue('commentServerAliveInterval');
   var text_serveraliveinterval = block.getFieldValue('ServerAliveInterval');
   var dropdown_commentserveralivecountmax = block.getFieldValue('commentServerAliveCountMax');
-  var text_serverserveralivecountmax = block.getFieldValue('ServerServerAliveCountMax');
+  var text_serveralivecountmax = block.getFieldValue('ServerAliveCountMax');
   var dropdown_commentpubkeyauthentication = block.getFieldValue('commentPubkeyAuthentication');
   var dropdown_pubkeyauthentication = block.getFieldValue('PubkeyAuthentication');
   var dropdown_commentpasswordauthentication = block.getFieldValue('commentPasswordAuthentication');
@@ -110,7 +116,7 @@ Blockly.bash['_ub_ssh_header'] = function(block) {
   code += '	' + dropdown_commentconnecttimeout + 'ConnectTimeout ' + text_connecttimeout +  '\n';
   code += '	' + dropdown_commentconnectionattempts + 'ConnectionAttempts ' + text_connectionattempts +  '\n';
   code += '	' + dropdown_commentserveraliveinterval + 'ServerAliveInterval ' + text_serveraliveinterval +  '\n';
-  code += '	' + dropdown_commentserveralivecountmax + 'ServerServerAliveCountMax ' + text_serverserveralivecountmax +  '\n';
+  code += '	' + dropdown_commentserveralivecountmax + 'ServerAliveCountMax ' + text_serveralivecountmax +  '\n';
   code += '	' + dropdown_commentpubkeyauthentication + 'PubkeyAuthentication ' + dropdown_pubkeyauthentication +  '\n';
   code += '	' + dropdown_commentpasswordauthentication + 'PasswordAuthentication ' + dropdown_passwordauthentication +  '\n';
   code += '	' + dropdown_commentstricthostkeychecking + 'StrictHostKeyChecking ' + dropdown_stricthostkeychecking +  '\n';
@@ -136,8 +142,8 @@ Blockly.bash['_ub_ssh_host'] = function(block) {
   
   var code = '';
   
-  code += text_hostname + text_netname + '\n';
-  code += '	' + dropdown_commentproxycommand + 'ProxyCommand ' + text_proxycommand +  '\n';
+  code += 'Host ' + text_hostname + text_netname + '\n';
+  code += '	' + dropdown_commentproxycommand + 'ProxyCommand ' + '\"$sshDir/cautossh\" ' + text_proxycommand +  '\n';
   code += '	' + dropdown_commentuser + 'User ' + text_user +  '\n';
   code += '	' + dropdown_commentidentityfile + 'IdentityFile ' + text_identityfile +  '\n';
   
@@ -205,7 +211,7 @@ Blockly.bash['_ub_check_lan'] = function(block) {
   code += '_check_LAN_' + text_network + '() {\n';
   code += '	ip addr show | grep ' + text_name + ' > /dev/null 2>&1 && return 0\n';
   code += '	return 1\n';
-  code += '}\n';
+  code += '}\n\n';
   return code;
 };
 
@@ -217,7 +223,7 @@ Blockly.bash['_ub_ssh_proxy_machine_network'] = function(block) {
   code += '	_start\n\n'
   code += statements_name;
   code += '\n	_stop\n'
-  code += '}\n';
+  code += '}\n\n';
   return code;
 };
 
@@ -288,8 +294,17 @@ Blockly.bash['_ub_autosshvars'] = function(block) {
   return code;
 };
 
+Blockly.bash['_ub_scriptabsolutefolder'] = function(block) {
+  var code = '\"$scriptAbsoluteFolder\"';
+  return [code, Blockly.bash.ORDER_ATOMIC];
+};
 
-
-
+Blockly.bash['_ub_scriptabsolutefolder_statements'] = function(block) {
+  var text_name = block.getFieldValue('NAME');
+  var statements_name = Blockly.bash.statementToCode(block, 'NAME');
+  statements_name = statements_name.replace(/\n$/g, '');
+  var code = '\"$scriptAbsoluteFolder\"' + text_name + ' ' + statements_name.substring(1) + '\n';
+  return code;
+};
 
 
