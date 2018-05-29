@@ -4179,7 +4179,7 @@ _localDir() {
 		return
 	fi
 	
-	[[ "$3" != "" ]] && echo -n "$3"/
+	[[ "$3" != "" ]] && echo -n "$3" && [[ "$3" != "/" ]] && echo "/"
 	realpath -L -s --relative-to="$2" "$1"
 	
 }
@@ -4300,8 +4300,8 @@ _setFakeHomeEnv() {
 	
 	export realHome="$HOME"
 	
-	[[ "$appGlobalFakeHome" == "" ]] && export fakeHome=$(_findDir "$1")
-	[[ "$appGlobalFakeHome" != "" ]] && export fakeHome=$(_findDir "$appGlobalFakeHome")
+	export fakeHome=$(_findDir "$1")
+	[[ "$appGlobalFakeHome" != "" ]] && [[ "$1" != "$instancedFakeHome" ]] && export fakeHome=$(_findDir "$appGlobalFakeHome")
 	
 	export HOME="$fakeHome"
 	
@@ -4422,10 +4422,10 @@ _editFakeHome_sequence() {
 	_setFakeHomeEnv "$globalFakeHome"
 	_makeFakeHome > /dev/null 2>&1
 	
-	env -i DISPLAY="$DISPLAY" XAUTH="$XAUTH" XAUTHORITY="$XAUTHORITY" XSOCK="$XSOCK" HOME="$HOME" setFakeHome="$setFakeHome" TERM="${TERM}" SHELL="${SHELL}" PATH="${PATH}" dbus-run-session "$@"
+	env -i DISPLAY="$DISPLAY" XAUTH="$XAUTH" XAUTHORITY="$XAUTHORITY" XSOCK="$XSOCK" realHome="$realHome" keepFakeHome="$keepFakeHome" HOME="$HOME" setFakeHome="$setFakeHome" TERM="${TERM}" SHELL="${SHELL}" PATH="${PATH}" dbus-run-session "$@"
 	#"$@"
 	
-	_unmakeFakeHome > /dev/null 2>&1
+	#_unmakeFakeHome > /dev/null 2>&1
 	
 	_resetFakeHomeEnv_nokeep
 	_stop
@@ -4476,7 +4476,7 @@ _userFakeHome_sequence() {
 	_setFakeHomeEnv "$instancedFakeHome"
 	_makeFakeHome > /dev/null 2>&1
 	
-	env -i DISPLAY="$DISPLAY" XAUTH="$XAUTH" XAUTHORITY="$XAUTHORITY" XSOCK="$XSOCK" HOME="$HOME" setFakeHome="$setFakeHome" TERM="${TERM}" SHELL="${SHELL}" PATH="${PATH}" dbus-run-session "$@"
+	env -i DISPLAY="$DISPLAY" XAUTH="$XAUTH" XAUTHORITY="$XAUTHORITY" XSOCK="$XSOCK" realHome="$realHome" keepFakeHome="$keepFakeHome" HOME="$HOME" setFakeHome="$setFakeHome" TERM="${TERM}" SHELL="${SHELL}" PATH="${PATH}" dbus-run-session "$@"
 	#"$@"
 	
 	[[ "$userFakeHome_enableMemMount" == "true" ]] && ! _umountUserFakeHome_instance && _stop 1
@@ -7529,6 +7529,13 @@ _test_devemacs() {
 }
 
 _set_emacsFakeHomeSource() {
+	if [[ ! -e "$scriptLib"/app/emacs/home ]]
+	then
+		_messageError 'missing: '"$scriptLib"'/app/emacs/home'
+		_messageFAIL
+		_stop 1
+	fi
+	
 	export emacsFakeHomeSource="$scriptLib"/app/emacs/home
 	if ! [[ -e "$emacsFakeHomeSource" ]]
 	then
@@ -7596,6 +7603,104 @@ _bashdb() {
 
 _ubdb() {
 	_bashdb "$scriptAbsoluteLocation" "$@"
+}
+
+_test_devatom() {
+	_getDep rsync
+	
+	_getDep atom
+	
+	#local atomDetectedVersion=$(atom --version | head -n 1 | cut -f 2- -d \: | cut -f 2- -d \  | cut -f 2 -d \. )
+	#! [[ "$atomDetectedVersion" -ge "27" ]] && echo atom too old && _stop 1
+}
+
+_set_atomFakeHomeSource() {
+	export atomFakeHomeSource="$scriptLib"/app/atom/home
+	
+	if ! [[ -e "$atomFakeHomeSource" ]]
+	then
+		true
+		#export atomFakeHomeSource="$scriptLib"/ubiquitous_bash/_lib/app/atom/home
+	fi
+	
+	if [[ ! -e "$scriptLib"/app/atom/home ]]
+	then
+		_messageError 'missing: atomFakeHomeSource= '"$atomFakeHomeSource" > /dev/tty
+		_messageFAIL
+		_stop 1
+	fi
+}
+
+_prepare_atomDev_fakeHome() {
+	_set_atomFakeHomeSource
+	
+	cp -a "$atomFakeHomeSource"/. "$HOME"
+}
+
+_atomDev_sequence() {
+	_prepare_atomDev_fakeHome
+	
+	export keepFakeHome="false"
+	
+	atom --foreground true "$@"
+}
+
+_atomDev() {
+	_selfFakeHome _atomDev_sequence "$@"
+}
+
+_atom_user() {
+	_atomDev "$@"  > /dev/null 2>&1 &
+}
+
+_atomDev_edit_sequence() {
+	_set_atomFakeHomeSource
+	export appGlobalFakeHome="$atomFakeHomeSource"
+	
+	export keepFakeHome="false"
+	
+	_editFakeHome atom --foreground true "$@"
+}
+
+_atomDev_edit() {
+	"$scriptAbsoluteLocation" _atomDev_edit_sequence "$@"
+}
+
+_atom_edit() {
+	_atomDev_edit "$@"  > /dev/null 2>&1 &
+}
+
+_atom_config() {
+	_set_atomFakeHomeSource
+	
+	export ATOM_HOME="$atomFakeHomeSource"/.atom
+	atom "$@"
+}
+
+_atom_tmp_sequence() {
+	_start
+	_set_atomFakeHomeSource
+	
+	mkdir -p "$safeTmp"/appcfg
+	
+	rsync -q -ax --exclude "/.cache" "$atomFakeHomeSource"/.atom/ "$safeTmp"/appcfg/
+	
+	export ATOM_HOME="$safeTmp"/appcfg
+	atom --foreground true "$@"
+	
+	_stop
+}
+
+_atom_tmp() {
+	"$scriptAbsoluteLocation" _atom_tmp_sequence "$@"  > /dev/null 2>&1 &
+}
+
+_atom() {
+	_atom_tmp "$@"
+}
+
+_ubide() {
+	_atom . ./ubiquitous_bash.sh "$@"
 }
 
 _testGit() {
@@ -9479,6 +9584,24 @@ _upgradeUbiquitous() {
 	_setupUbiquitous
 }
 
+_refresh_anchors_ubiquitous() {
+	cp -a "$scriptAbsoluteFolder"/_anchor "$scriptAbsoluteFolder"/_ubide
+	cp -a "$scriptAbsoluteFolder"/_anchor "$scriptAbsoluteFolder"/_ubdb
+}
+
+_anchor() {
+	[[ "$scriptAbsoluteFolder" == *"ubiquitous_bash" ]] && _refresh_anchors_ubiquitous
+	
+	if type "_refresh_anchors" > /dev/null 2>&1
+	then
+		_tryExec "_refresh_anchors"
+		return
+	fi
+	
+	return 0
+}
+
+
 _findPort_opsauto_blockchain() {
 	if ! _findPort 63800 63850 "$@" >> "$scriptLocal"/opsauto
 	then
@@ -10504,14 +10627,27 @@ _prepare_splice() {
 
 _prepareFakeHome() {
 	mkdir -p "$globalFakeHome"
+	[[ "$appGlobalFakeHome" != "" ]] && mkdir -p "$appGlobalFakeHome"
 }
 
 _prepareFakeHome_instance() {
 	_prepareFakeHome
 	
 	mkdir -p "$instancedFakeHome"
-	#cp -a "$globalFakeHome"/. "$instancedFakeHome"
-	rsync -q -ax --exclude "/.cache" "$globalFakeHome"/ "$instancedFakeHome"/
+	
+	if [[ "$appGlobalFakeHome" == "" ]]
+	then
+		#cp -a "$globalFakeHome"/. "$instancedFakeHome"
+		rsync -q -ax --exclude "/.cache" "$globalFakeHome"/ "$instancedFakeHome"/
+		return
+	fi
+	
+	if [[ "$appGlobalFakeHome" != "" ]]
+	then
+		#cp -a "$appGlobalFakeHome"/. "$instancedFakeHome"
+		rsync -q -ax --exclude "/.cache" "$appGlobalFakeHome"/ "$instancedFakeHome"/
+		return
+	fi
 }
 
 _rm_instance_fakeHome() {
@@ -10797,7 +10933,8 @@ _prepare_docker() {
 
 _buildHello() {
 	local helloSourceCode
-	helloSourceCode=$(find "$scriptAbsoluteFolder" -type f -name "hello.c" | head -n 1)
+	helloSourceCode="$scriptAbsoluteFolder"/generic/hello/hello.c
+	! [[ -e "$helloSourceCode" ]] && helloSourceCode="$scriptLib"/ubiquitous_bash/generic/hello/hello.c
 	
 	mkdir -p "$scriptBin"
 	gcc -o "$scriptBin"/hello -static -nostartfiles "$helloSourceCode"
@@ -10864,8 +11001,9 @@ _testBuiltIdle() {
 }
 
 _buildIdle() {
-	
-	idleSourceCode=$(find "$scriptAbsoluteFolder" -type f -name "getIdle.c" | head -n 1)
+	local idleSourceCode
+	idleSourceCode="$scriptAbsoluteFolder"/generic/process/idle.c
+	! [[ -e "$idleSourceCode" ]] && idleSourceCode="$scriptLib"/ubiquitous_bash/generic/process/idle.c
 	
 	mkdir -p "$scriptBin"
 	gcc -o "$scriptBin"/getIdle "$idleSourceCode" -lXss -lX11
@@ -11942,6 +12080,14 @@ _augment() {
 	_augment_generator_bash
 }
 
+#duplicate _anchor
+_refresh_anchors() {
+	_refresh_anchors_ubiquitous
+	
+	cp -a "$scriptAbsoluteFolder"/_anchor "$scriptAbsoluteFolder"/_construct
+	cp -a "$scriptAbsoluteFolder"/_anchor "$scriptAbsoluteFolder"/_augment
+}
+
 
 #####Program
 
@@ -12311,7 +12457,19 @@ _generate_compile_bash() {
 
 _generate_compile_bash_prog() {
 	"$scriptAbsoluteLocation" _true
-} 
+	
+	rm "$scriptAbsoluteFolder"/ubiquitous_bash.sh
+	
+	#"$scriptAbsoluteLocation" _compile_bash cautossh cautossh
+	#"$scriptAbsoluteLocation" _compile_bash lean lean.sh
+	
+	"$scriptAbsoluteLocation" _compile_bash core ubiquitous_bash.sh
+	
+	#"$scriptAbsoluteLocation" _compile_bash "" ""
+	#"$scriptAbsoluteLocation" _compile_bash ubiquitous_bash ubiquitous_bash.sh
+	
+	#"$scriptAbsoluteLocation" _package
+}
 
 #Default is to include all, or run a specified configuration. For this reason, it will be more typical to override this entire function, rather than append any additional code.
 _compile_bash_deps() {
@@ -12332,7 +12490,48 @@ _compile_bash_deps() {
 		return 0
 	fi
 	
-	if [[ "$1" == "" ]]
+	if [[ "$1" == "core" ]]
+	then
+		_deps_notLean
+		_deps_os_x11
+		
+		_deps_x11
+		_deps_image
+		_deps_virt
+		_deps_chroot
+		_deps_qemu
+		_deps_vbox
+		#_deps_docker
+		_deps_wine
+		_deps_dosbox
+		_deps_msw
+		_deps_fakehome
+		
+		_deps_git
+		_deps_bup
+		
+		#_deps_blockchain
+		
+		#_deps_command
+		#_deps_synergy
+		
+		#_deps_hardware
+		#_deps_x220t
+		
+		#_deps_user
+		
+		#_deps_proxy
+		#_deps_proxy_special
+		
+		_deps_build
+		
+		_deps_build_bash
+		_deps_build_bash_ubiquitous
+		
+		return 0
+	fi
+	
+	if [[ "$1" == "" ]] || [[ "$1" == "ubiquitous_bash" ]] || [[ "$1" == "ubiquitous_bash.sh" ]] || [[ "$1" == "complete" ]]
 	then
 		_deps_notLean
 		_deps_os_x11
@@ -12349,6 +12548,7 @@ _compile_bash_deps() {
 		_deps_msw
 		_deps_fakehome
 		
+		_deps_git
 		_deps_bup
 		
 		_deps_blockchain
@@ -12371,6 +12571,8 @@ _compile_bash_deps() {
 		
 		return 0
 	fi
+	
+	return 1
 }
 
 _vars_compile_bash() {
@@ -12541,6 +12743,7 @@ _compile_bash_shortcuts() {
 	[[ "$enUb_notLean" == "true" ]] && includeScriptList+=( "shortcuts/dev"/devsearch.sh )
 	
 	[[ "$enUb_notLean" == "true" ]] && includeScriptList+=( "shortcuts/dev/app"/devemacs.sh )
+	[[ "$enUb_notLean" == "true" ]] && includeScriptList+=( "shortcuts/dev/app"/devatom.sh )
 	
 	[[ "$enUb_git" == "true" ]] && includeScriptList+=( "shortcuts/git"/git.sh )
 	[[ "$enUb_git" == "true" ]] && includeScriptList+=( "shortcuts/git"/gitBare.sh )
@@ -13101,6 +13304,12 @@ _echo() {
 	echo "$@"
 }
 
+#Stop if script is imported into an existing shell and bypass not requested.
+if [[ "${BASH_SOURCE[0]}" != "${0}" ]] && [[ "$1" != "--bypass" ]]
+then
+	return
+fi
+
 #Set "ubOnlyMain" in "ops" overrides as necessary.
 if [[ "$ubOnlyMain" != "true" ]]
 then
@@ -13142,12 +13351,6 @@ then
 	fi
 fi
 [[ "$ubOnlyMain" == "true" ]] && export  ubOnlyMain="false"
-
-#Stop if script is imported into an existing shell and bypass not requested.
-if [[ "${BASH_SOURCE[0]}" != "${0}" ]] && [[ "$1" != "--bypass" ]]
-then
-	return
-fi
 
 if ! [[ "$1" != "--bypass" ]]
 then

@@ -1014,7 +1014,19 @@ _generate_compile_bash() {
 
 _generate_compile_bash_prog() {
 	"$scriptAbsoluteLocation" _true
-} 
+	
+	rm "$scriptAbsoluteFolder"/ubiquitous_bash.sh
+	
+	#"$scriptAbsoluteLocation" _compile_bash cautossh cautossh
+	#"$scriptAbsoluteLocation" _compile_bash lean lean.sh
+	
+	"$scriptAbsoluteLocation" _compile_bash core ubiquitous_bash.sh
+	
+	#"$scriptAbsoluteLocation" _compile_bash "" ""
+	#"$scriptAbsoluteLocation" _compile_bash ubiquitous_bash ubiquitous_bash.sh
+	
+	#"$scriptAbsoluteLocation" _package
+}
 
 #Default is to include all, or run a specified configuration. For this reason, it will be more typical to override this entire function, rather than append any additional code.
 _compile_bash_deps() {
@@ -1035,7 +1047,48 @@ _compile_bash_deps() {
 		return 0
 	fi
 	
-	if [[ "$1" == "" ]]
+	if [[ "$1" == "core" ]]
+	then
+		_deps_notLean
+		_deps_os_x11
+		
+		_deps_x11
+		_deps_image
+		_deps_virt
+		_deps_chroot
+		_deps_qemu
+		_deps_vbox
+		#_deps_docker
+		_deps_wine
+		_deps_dosbox
+		_deps_msw
+		_deps_fakehome
+		
+		_deps_git
+		_deps_bup
+		
+		#_deps_blockchain
+		
+		#_deps_command
+		#_deps_synergy
+		
+		#_deps_hardware
+		#_deps_x220t
+		
+		#_deps_user
+		
+		#_deps_proxy
+		#_deps_proxy_special
+		
+		_deps_build
+		
+		_deps_build_bash
+		_deps_build_bash_ubiquitous
+		
+		return 0
+	fi
+	
+	if [[ "$1" == "" ]] || [[ "$1" == "ubiquitous_bash" ]] || [[ "$1" == "ubiquitous_bash.sh" ]] || [[ "$1" == "complete" ]]
 	then
 		_deps_notLean
 		_deps_os_x11
@@ -1052,6 +1105,7 @@ _compile_bash_deps() {
 		_deps_msw
 		_deps_fakehome
 		
+		_deps_git
 		_deps_bup
 		
 		_deps_blockchain
@@ -1074,6 +1128,8 @@ _compile_bash_deps() {
 		
 		return 0
 	fi
+	
+	return 1
 }
 
 _vars_compile_bash() {
@@ -1244,6 +1300,7 @@ _compile_bash_shortcuts() {
 	[[ "$enUb_notLean" == "true" ]] && includeScriptList+=( "shortcuts/dev"/devsearch.sh )
 	
 	[[ "$enUb_notLean" == "true" ]] && includeScriptList+=( "shortcuts/dev/app"/devemacs.sh )
+	[[ "$enUb_notLean" == "true" ]] && includeScriptList+=( "shortcuts/dev/app"/devatom.sh )
 	
 	[[ "$enUb_git" == "true" ]] && includeScriptList+=( "shortcuts/git"/git.sh )
 	[[ "$enUb_git" == "true" ]] && includeScriptList+=( "shortcuts/git"/gitBare.sh )
@@ -1804,6 +1861,12 @@ _echo() {
 	echo "$@"
 }
 
+#Stop if script is imported into an existing shell and bypass not requested.
+if [[ "${BASH_SOURCE[0]}" != "${0}" ]] && [[ "$1" != "--bypass" ]]
+then
+	return
+fi
+
 #Set "ubOnlyMain" in "ops" overrides as necessary.
 if [[ "$ubOnlyMain" != "true" ]]
 then
@@ -1845,12 +1908,6 @@ then
 	fi
 fi
 [[ "$ubOnlyMain" == "true" ]] && export  ubOnlyMain="false"
-
-#Stop if script is imported into an existing shell and bypass not requested.
-if [[ "${BASH_SOURCE[0]}" != "${0}" ]] && [[ "$1" != "--bypass" ]]
-then
-	return
-fi
 
 if ! [[ "$1" != "--bypass" ]]
 then

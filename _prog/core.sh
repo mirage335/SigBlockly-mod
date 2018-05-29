@@ -209,3 +209,15 @@ _augment() {
 	_augment_generator_bash
 }
 
+#duplicate _anchor
+_refresh_anchors() {
+	_refresh_anchors_ubiquitous
+	
+	cp -a "$scriptAbsoluteFolder"/_anchor "$scriptAbsoluteFolder"/_construct
+	cp -a "$scriptAbsoluteFolder"/_anchor "$scriptAbsoluteFolder"/_augment
+}
+
+_ubide() {
+	_atom . ./ubiquitous_bash.sh ./_prog/core.sh ./_specglobalvars.sh  "$@"
+}
+
