@@ -217,7 +217,3 @@ _refresh_anchors() {
 	cp -a "$scriptAbsoluteFolder"/_anchor "$scriptAbsoluteFolder"/_augment
 }
 
-_ubide() {
-	_atom . ./ubiquitous_bash.sh ./_prog/core.sh ./_specglobalvars.sh  "$@"
-}
-
