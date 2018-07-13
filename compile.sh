@@ -1,5 +1,126 @@
 #!/usr/bin/env bash
 
+#Universal debugging filesystem.
+_user_log-ub() {
+	# DANGER Do NOT create automatically, or reference any existing directory!
+	! [[ -d "$HOME"/.ubcore/userlog ]] && cat - > /dev/null 2>&1 && return 0
+	
+	#Terminal session may be used - the sessionid may be set through .bashrc/.ubcorerc .
+	if [[ "$sessionid" != "" ]]
+	then
+		cat - >> "$HOME"/.ubcore/userlog/u-"$sessionid".log
+		return 0
+	fi
+	cat - >> "$HOME"/.ubcore/userlog/u-undef.log
+	
+	return 0
+}
+
+#Cyan. Harmless status messages.
+_messagePlain_nominal() {
+	echo -e -n '\E[0;36m '
+	echo -n "$@"
+	echo -e -n ' \E[0m'
+	echo
+	return 0
+}
+
+#Blue. Diagnostic instrumentation.
+_messagePlain_probe() {
+	echo -e -n '\E[0;34m '
+	echo -n "$@"
+	echo -e -n ' \E[0m'
+	echo
+	return 0
+}
+
+#Blue. Diagnostic instrumentation.
+_messagePlain_probe_expr() {
+	echo -e -n '\E[0;34m '
+	echo -e -n "$@"
+	echo -e -n ' \E[0m'
+	echo
+	return 0
+}
+
+#Green. Working as expected.
+_messagePlain_good() {
+	echo -e -n '\E[0;32m '
+	echo -n "$@"
+	echo -e -n ' \E[0m'
+	echo
+	return 0
+}
+
+#Yellow. May or may not be a problem.
+_messagePlain_warn() {
+	echo -e -n '\E[1;33m '
+	echo -n "$@"
+	echo -e -n ' \E[0m'
+	echo
+	return 0
+}
+
+#Red. Will result in missing functionality, reduced performance, etc, but not necessarily program failure overall.
+_messagePlain_bad() {
+	echo -e -n '\E[0;31m '
+	echo -n "$@"
+	echo -e -n ' \E[0m'
+	echo
+	return 0
+}
+
+##Parameters
+#"--shell", ""
+#"--profile"
+#"--parent", "--embed", "--return", "--devenv"
+#"--call", "--script" "--bypass"
+
+ub_import=
+ub_import_param=
+ub_import_script=
+ub_loginshell=
+
+[[ "${BASH_SOURCE[0]}" != "${0}" ]] && ub_import="true"
+([[ "$1" == '--profile' ]] || [[ "$1" == '--script' ]] || [[ "$1" == '--call' ]] || [[ "$1" == '--return' ]] || [[ "$1" == '--devenv' ]] || [[ "$1" == '--shell' ]] || [[ "$1" == '--bypass' ]] || [[ "$1" == '--parent' ]] || [[ "$1" == '--embed' ]]) && ub_import_param="$1" && shift
+([[ "$0" == "/bin/bash" ]] || [[ "$0" == "-bash" ]] || [[ "$0" == "/usr/bin/bash" ]] || [[ "$0" == "bash" ]]) && ub_loginshell="true"	#Importing ubiquitous bash into a login shell with "~/.bashrc" is the only known cause for "_getScriptAbsoluteLocation" to return a result such as "/bin/bash".
+[[ "$ub_import" == "true" ]] && ! [[ "$ub_loginshell" == "true" ]] && ub_import_script="true"
+
+_messagePlain_probe_expr '$0= '"$0"'\n ''$1= '"$1"'\n ''ub_import= '"$ub_import"'\n ''ub_import_param= '"$ub_import_param"'\n ''ub_import_script= '"$ub_import_script"'\n ''ub_loginshell= '"$ub_loginshell" | _user_log-ub
+
+# DANGER Prohibited import from login shell. Use _setupUbiquitous, call from another script, or manually set importScriptLocation.
+# WARNING Import from shell can be detected. Import from script cannot. Asserting that script has been imported is possible. Asserting that script has not been imported is not possible. Users may be protected from interactive mistakes. Script developers are NOT protected.
+if [[ "$ub_import_param" == "--profile" ]]
+then
+	if ([[ "$profileScriptLocation" == "" ]] ||  [[ "$profileScriptFolder" == "" ]]) && _messagePlain_bad 'import: profile: missing: profileScriptLocation, missing: profileScriptFolder' | _user_log-ub
+	then
+		return 1 >/dev/null 2>&1
+		exit 1
+	fi
+elif ([[ "$ub_import_param" == "--parent" ]] || [[ "$ub_import_param" == "--embed" ]] || [[ "$ub_import_param" == "--return" ]] || [[ "$ub_import_param" == "--devenv" ]])
+then
+	if ([[ "$scriptAbsoluteLocation" == "" ]] || [[ "$scriptAbsoluteFolder" == "" ]] || [[ "$sessionid" == "" ]]) && _messagePlain_bad 'import: parent: missing: scriptAbsoluteLocation, missing: scriptAbsoluteFolder, missing: sessionid' | _user_log-ub
+	then
+		return 1 >/dev/null 2>&1
+		exit 1
+	fi
+elif [[ "$ub_import_param" == "--call" ]] || [[ "$ub_import_param" == "--script" ]] || [[ "$ub_import_param" == "--bypass" ]] || [[ "$ub_import_param" == "--shell" ]] || ([[ "$ub_import" == "true" ]] && [[ "$ub_import_param" == "" ]])
+then
+	if ([[ "$importScriptLocation" == "" ]] ||  [[ "$importScriptFolder" == "" ]]) && _messagePlain_bad 'import: call: missing: importScriptLocation, missing: importScriptFolder' | _user_log-ub
+	then
+		return 1 >/dev/null 2>&1
+		exit 1
+	fi
+elif [[ "$ub_import" != "true" ]]	#"--shell", ""
+then
+	_messagePlain_warn 'import: undetected: cannot determine if imported' | _user_log-ub
+	true #no problem
+else	#FAIL, implies [[ "$ub_import" == "true" ]]
+	_messagePlain_bad 'import: fall: fail' | _user_log-ub
+	return 1 >/dev/null 2>&1
+	exit 1
+fi
+
 #Override.
 
 #Override (Program).
@@ -80,7 +201,7 @@ _getAbsoluteLocation() {
 			else
 	absoluteLocation=$(realpath -L "$1")
 	fi
-	echo $absoluteLocation
+	echo "$absoluteLocation"
 }
 alias getAbsoluteLocation=_getAbsoluteLocation
 
@@ -422,18 +543,36 @@ _command_safeBackup() {
 #http://stackoverflow.com/questions/687948/timeout-a-command-in-bash-without-unnecessary-delay
 _timeout() { ( set +b; sleep "$1" & "${@:2}" & wait -n; r=$?; kill -9 `jobs -p`; exit $r; ) } 
 
+_terminate() {
+	local processListFile
+	processListFile="$scriptAbsoluteFolder"/.pidlist_$(_uid)
+	
+	local currentPID
+	
+	cat "$safeTmp"/.pid >> "$processListFile" 2> /dev/null
+	
+	while read -r currentPID
+	do
+		pkill -P "$currentPID"
+		kill "$currentPID"
+	done < "$processListFile"
+	
+	rm "$processListFile"
+}
+
 _terminateAll() {
 	local processListFile
 	processListFile="$scriptAbsoluteFolder"/.pidlist_$(_uid)
 	
 	local currentPID
 	
-	cat ./w_*/.pid > "$processListFile"
+	cat ./w_*/.pid >> "$processListFile" 2> /dev/null
+	cat ./.s_*/.pid >> "$processListFile" 2> /dev/null
 	
 	while read -r currentPID
 	do
 		pkill -P "$currentPID"
-		pkill "$currentPID"
+		kill "$currentPID"
 	done < "$processListFile"
 	
 	rm "$processListFile"
@@ -521,6 +660,297 @@ _test_permissions_ubiquitous() {
 
 
 
+#Takes "$@". Places in global array variable "globalArgs".
+# WARNING Adding this globalvariable to the "structure/globalvars.sh" declaration or similar to be overridden at script launch is not recommended.
+#"${globalArgs[@]}"
+_gather_params() {
+	export globalArgs=("${@}")
+}
+
+_instance_internal() {
+	! [[ -e "$1" ]] && return 1
+	! [[ -d "$1" ]] && return 1
+	! [[ -e "$2" ]] && return 1
+	! [[ -d "$2" ]] && return 1
+	rsync -q -ax --exclude "/.cache" --exclude "/.git" "$@"
+}
+
+#echo -n
+_safeEcho() {
+	printf '%s' "$1"
+	shift
+	
+	[[ "$@" == "" ]] && return 0
+	
+	local currentArg
+	for currentArg in "$@"
+	do
+		printf '%s' " "
+		printf '%s' "$currentArg"
+	done
+	return 0
+}
+
+#echo
+_safeEcho_newline() {
+	_safeEcho "$@"
+	printf '\n'
+}
+
+#Universal debugging filesystem.
+#End user function.
+_user_log() {
+	# DANGER Do NOT create automatically, or reference any existing directory!
+	! [[ -d "$HOME"/.ubcore/userlog ]] && cat - > /dev/null 2>&1 && return 0
+	
+	cat - >> "$HOME"/.ubcore/userlog/user.log
+	
+	return 0
+}
+
+_monitor_user_log() {
+	! [[ -d "$HOME"/.ubcore/userlog ]] && return 1
+	
+	tail -f "$HOME"/.ubcore/userlog/*
+}
+
+#Universal debugging filesystem.
+#"generic/ubiquitousheader.sh"
+_user_log-ub() {
+	# DANGER Do NOT create automatically, or reference any existing directory!
+	! [[ -d "$HOME"/.ubcore/userlog ]] && cat - > /dev/null 2>&1 && return 0
+	
+	#Terminal session may be used - the sessionid may be set through .bashrc/.ubcorerc .
+	if [[ "$sessionid" != "" ]]
+	then
+		cat - >> "$HOME"/.ubcore/userlog/u-"$sessionid".log
+		return 0
+	fi
+	cat - >> "$HOME"/.ubcore/userlog/u-undef.log
+	
+	return 0
+}
+
+_monitor_user_log-ub() {
+	! [[ -d "$HOME"/.ubcore/userlog ]] && return 1
+	
+	tail -f "$HOME"/.ubcore/userlog/u-*
+}
+
+#Universal debugging filesystem.
+_user_log_anchor() {
+	# DANGER Do NOT create automatically, or reference any existing directory!
+	! [[ -d "$HOME"/.ubcore/userlog ]] && cat - > /dev/null 2>&1 && return 0
+	
+	#Terminal session may be used - the sessionid may be set through .bashrc/.ubcorerc .
+	if [[ "$sessionid" != "" ]]
+	then
+		cat - >> "$HOME"/.ubcore/userlog/a-"$sessionid".log
+		return 0
+	fi
+	cat - >> "$HOME"/.ubcore/userlog/a-undef.log
+	
+	return 0
+}
+
+_monitor_user_log_anchor() {
+	! [[ -d "$HOME"/.ubcore/userlog ]] && return 1
+	
+	tail -f "$HOME"/.ubcore/userlog/a-*
+}
+
+#Universal debugging filesystem.
+_user_log_template() {
+	# DANGER Do NOT create automatically, or reference any existing directory!
+	! [[ -d "$HOME"/.ubcore/userlog ]] && cat - > /dev/null 2>&1 && return 0
+	
+	#Terminal session may be used - the sessionid may be set through .bashrc/.ubcorerc .
+	if [[ "$sessionid" != "" ]]
+	then
+		cat - >> "$HOME"/.ubcore/userlog/t-"$sessionid".log
+		return 0
+	fi
+	cat - >> "$HOME"/.ubcore/userlog/t-undef.log
+	
+	return 0
+}
+
+_messageColors() {
+	echo -e '\E[1;37m 'white' \E[0m'
+	echo -e '\E[0;30m 'black' \E[0m'
+	echo -e '\E[0;34m 'blue' \E[0m'
+	echo -e '\E[1;34m 'blue_light' \E[0m'
+	echo -e '\E[0;32m 'green' \E[0m'
+	echo -e '\E[1;32m 'green_light' \E[0m'
+	echo -e '\E[0;36m 'cyan' \E[0m'
+	echo -e '\E[1;36m 'cyan_light' \E[0m'
+	echo -e '\E[0;31m 'red' \E[0m'
+	echo -e '\E[1;31m 'red_light' \E[0m'
+	echo -e '\E[0;35m 'purple' \E[0m'
+	echo -e '\E[1;35m 'purple_light' \E[0m'
+	echo -e '\E[0;33m 'brown' \E[0m'
+	echo -e '\E[1;33m 'yellow' \E[0m'
+	echo -e '\E[0;30m 'gray' \E[0m'
+	echo -e '\E[1;37m 'gray_light' \E[0m'
+	return 0
+}
+
+#Cyan. Harmless status messages.
+#"generic/ubiquitousheader.sh"
+_messagePlain_nominal() {
+	echo -e -n '\E[0;36m '
+	echo -n "$@"
+	echo -e -n ' \E[0m'
+	echo
+	return 0
+}
+
+#Blue. Diagnostic instrumentation.
+#"generic/ubiquitousheader.sh"
+_messagePlain_probe() {
+	echo -e -n '\E[0;34m '
+	echo -n "$@"
+	echo -e -n ' \E[0m'
+	echo
+	return 0
+}
+
+#Blue. Diagnostic instrumentation.
+#"generic/ubiquitousheader.sh"
+_messagePlain_probe_expr() {
+	echo -e -n '\E[0;34m '
+	echo -e -n "$@"
+	echo -e -n ' \E[0m'
+	echo
+	return 0
+}
+
+#Green. Working as expected.
+#"generic/ubiquitousheader.sh"
+_messagePlain_good() {
+	echo -e -n '\E[0;32m '
+	echo -n "$@"
+	echo -e -n ' \E[0m'
+	echo
+	return 0
+}
+
+#Yellow. May or may not be a problem.
+#"generic/ubiquitousheader.sh"
+_messagePlain_warn() {
+	echo -e -n '\E[1;33m '
+	echo -n "$@"
+	echo -e -n ' \E[0m'
+	echo
+	return 0
+}
+
+#Red. Will result in missing functionality, reduced performance, etc, but not necessarily program failure overall.
+_messagePlain_bad() {
+	echo -e -n '\E[0;31m '
+	echo -n "$@"
+	echo -e -n ' \E[0m'
+	echo
+	return 0
+}
+
+#Demarcate major steps.
+_messageNormal() {
+	echo -e -n '\E[1;32;46m '
+	echo -n "$@"
+	echo -e -n ' \E[0m'
+	echo
+	return 0
+}
+
+#Demarcate major failures.
+_messageError() {
+	echo -e -n '\E[1;33;41m '
+	echo -n "$@"
+	echo -e -n ' \E[0m'
+	echo
+	return 0
+}
+
+#Demarcate need to fetch/generate dependency automatically - not a failure condition.
+_messageNEED() {
+	_messageNormal "NEED"
+	#echo " NEED "
+}
+
+#Demarcate have dependency already, no need to fetch/generate.
+_messageHAVE() {
+	_messageNormal "HAVE"
+	#echo " HAVE "
+}
+
+_messageWANT() {
+	_messageNormal "WANT"
+	#echo " WANT "
+}
+
+#Demarcate where PASS/FAIL status cannot be absolutely proven. Rarely appropriate - usual best practice is to simply progress to the next major step.
+_messageDONE() {
+	_messageNormal "DONE"
+	#echo " DONE "
+}
+
+_messagePASS() {
+	_messageNormal "PASS"
+	#echo " PASS "
+}
+
+#Major failure. Program stopped.
+_messageFAIL() {
+	_messageError "FAIL"
+	#echo " FAIL "
+	_stop 1
+}
+
+_messageWARN() {
+	echo
+	echo "$@"
+	return 0
+}
+
+
+_messageProcess() {
+	local processString
+	processString="$1""..."
+	
+	local processStringLength
+	processStringLength=${#processString}
+	
+	local currentIteration
+	currentIteration=0
+	
+	local padLength
+	let padLength=40-"$processStringLength"
+	
+	[[ "$processStringLength" -gt "38" ]] && _messageNormal "$processString" && return 0
+	
+	echo -e -n '\E[1;32;46m '
+	
+	echo -n "$processString"
+	
+	echo -e -n '\E[0m'
+	
+	while [[ "$currentIteration" -lt "$padLength" ]]
+	do
+		echo -e -n ' '
+		let currentIteration="$currentIteration"+1
+	done
+	
+	return 0
+}
+
+_mustcarry() {
+	grep "$1" "$2" > /dev/null 2>&1 && return 0
+	
+	echo "$1" >> "$2"
+	return
+}
+
 #"$1" == file path
 _includeFile() {
 	
@@ -583,24 +1013,759 @@ _includeScripts() {
 	done
 }
 
+#Gets filename extension, specifically any last three characters in given string.
+#"$1" == filename
+_getExt() {
+	echo "$1" | tr -dc 'a-zA-Z0-9.' | tr '[:upper:]' '[:lower:]' | tail -c 4
+}
+
+#Reports either the directory provided, or the directory of the file provided.
+_findDir() {
+	local dirIn=$(_getAbsoluteLocation "$1")
+	dirInLogical=$(realpath -L -s "$dirIn")
+	
+	if [[ -d "$dirInLogical" ]]
+	then
+		echo "$dirInLogical"
+		return
+	fi
+	
+	echo $(_getAbsoluteFolder "$dirInLogical")
+	return
+	
+}
+
+_discoverResource() {
+	
+	[[ "$scriptAbsoluteFolder" == "" ]] && return 1
+	
+	local testDir
+	testDir="$scriptAbsoluteFolder" ; [[ -e "$testDir"/"$1" ]] && echo "$testDir"/"$1" && return 0
+	testDir="$scriptAbsoluteFolder"/.. ; [[ -e "$testDir"/"$1" ]] && echo "$testDir"/"$1" && return 0
+	testDir="$scriptAbsoluteFolder"/../.. ; [[ -e "$testDir"/"$1" ]] && echo "$testDir"/"$1" && return 0
+	testDir="$scriptAbsoluteFolder"/../../.. ; [[ -e "$testDir"/"$1" ]] && echo "$testDir"/"$1" && return 0
+	
+	return 1
+}
+
+_rmlink() {
+	[[ -h "$1" ]] && rm -f "$1" && return 0
+	! [[ -e "$1" ]] && return 0
+	return 1
+}
+
+#Like "ln -sf", but will not proceed if target is not link and exists (ie. will not erase files).
+_relink_sequence() {
+
+	#Do not update correct symlink.
+	local existingLinkTarget
+	existingLinkTarget=$(readlink "$2")
+	[[ "$existingLinkTarget" == "$1" ]] && return 0
+	
+	! [[ "$relinkRelativeUb" == "true" ]] && _rmlink "$2" && ln -s "$1" "$2" && return 0
+	[[ "$relinkRelativeUb" == "true" ]] && _rmlink "$2" && ln -s -r "$1" "$2" && return 0
+	
+	return 1
+}
+
+_relink() {
+	[[ "$relinkRelativeUb" == "true" ]] && export relinkRelativeUb=""
+	_relink_sequence "$@"
+}
+
+_relink_relative() {
+	export relinkRelativeUb="true"
+	_relink_sequence "$@"
+	export relinkRelativeUb=""
+	unset relinkRelativeUb
+}
+
+#Copies files only if source/destination do match. Keeps files in a completely written state as often as possible.
+_cpDiff() {
+	! diff "$1" "$2" > /dev/null 2>&1 && cp "$1" "$2"
+}
+
+_wait_umount() {
+	sudo -n umount "$1"
+	mountpoint "$1" > /dev/null 2>&1 || return 0
+	sleep 0.1
+	
+	sudo -n umount "$1"
+	mountpoint "$1" > /dev/null 2>&1 || return 0
+	sleep 0.3
+	
+	[[ "$EMERGENCYSHUTDOWN" == "true" ]] && return 1
+	
+	sudo -n umount "$1"
+	mountpoint "$1" > /dev/null 2>&1 || return 0
+	sleep 1
+	
+	sudo -n umount "$1"
+	mountpoint "$1" > /dev/null 2>&1 || return 0
+	sleep 3
+	
+	sudo -n umount "$1"
+	mountpoint "$1" > /dev/null 2>&1 || return 0
+	sleep 9
+	
+	return 1
+} 
+
+_testMountChecks() {
+	_getDep mountpoint
+}
+
+#"$1" == test directory
+#"$2" == flag file
+_flagMount() {
+	# TODO: Possible stability/portability improvements.
+	#https://unix.stackexchange.com/questions/248472/finding-mount-points-with-the-find-command
+	
+	mountpoint "$1" >/dev/null 2>&1 && echo -n true > "$2"
+}
+
+#Searches directory for mounted filesystems.
+# DANGER Do not drop requirement for sudo. As this function represents a final fail-safe, filesystem permissions cannot be allowed to interfere.
+#"$1" == test directory
+_checkForMounts() {
+	_mustGetSudo || return 0
+	
+	_start
+	
+	#If test directory itself is a directory, further testing is not necessary.
+	sudo -n mountpoint "$1" > /dev/null 2>&1 && _stop 0
+	
+	local mountCheckFile="$safeTmp"/mc-$(_uid)
+	
+	echo -n false > "$mountCheckFile"
+	
+	#Sanity check, file exists.
+	! [[ -e "$mountCheckFile" ]] && _stop 0
+	
+	# TODO: Possible stability/portability improvements.
+	#https://unix.stackexchange.com/questions/248472/finding-mount-points-with-the-find-command
+	
+	find "$1" -type d -exec sudo -n mountpoint {} 2>/dev/null \; | grep 'is a mountpoint' >/dev/null 2>&1 && echo -n true > "$mountCheckFile"
+	
+	#find "$1" -type d -exec "$scriptAbsoluteLocation" {} "$mountCheckFile" \;
+	
+	local includesMount
+	includesMount=$(cat "$mountCheckFile")
+	
+	#Thorough sanity checking.
+	[[ "$includesMount" != "false" ]] && _stop 0
+	[[ "$includesMount" == "true" ]] && _stop 0
+	[[ "$includesMount" == "false" ]] && _stop 1
+	
+	_stop 0
+}
+
+#Waits for the process PID specified by first parameter to end. Useful in conjunction with $! to provide process control and/or PID files. Unlike wait command, does not require PID to be a child of the current shell.
+_pauseForProcess() {
+	while ps --no-headers -p $1 &> /dev/null
+	do
+		sleep 0.3
+	done
+}
+alias _waitForProcess=_pauseForProcess
+alias waitForProcess=_pauseForProcess
+
+_test_daemon() {
+	_getDep pkill
+}
+
+#To ensure the lowest descendents are terminated first, the file must be created in reverse order. Additionally, PID files created before a prior reboot must be discarded and ignored.
+_prependDaemonPID() {
+	
+	#Reset locks from before prior reboot.
+	_readLocked "$daemonPidFile"lk
+	_readLocked "$daemonPidFile"op
+	_readLocked "$daemonPidFile"cl
+	
+	while true
+	do
+		_createLocked "$daemonPidFile"op && break
+		sleep 0.1
+	done
+	
+	#Removes old PID file if not locked during current UNIX session (ie. since latest reboot).  Prevents termination of non-daemon PIDs.
+	if ! _readLocked "$daemonPidFile"lk
+	then
+		rm -f "$daemonPidFile"
+		rm -f "$daemonPidFile"t
+	fi
+	_createLocked "$daemonPidFile"lk
+	
+	[[ ! -e "$daemonPidFile" ]] && echo >> "$daemonPidFile"
+	cat - "$daemonPidFile" >> "$daemonPidFile"t
+	mv "$daemonPidFile"t "$daemonPidFile"
+	
+	rm -f "$daemonPidFile"op
+}
+
+#By default, process descendents will be terminated first. Doing so is essential to reaching sub-proesses of sub-scripts, without manual user input.
+#https://stackoverflow.com/questions/34438189/bash-sleep-process-not-getting-killed
+_daemonSendTERM() {
+	#Terminate descendents if parent has not been able to quit.
+	pkill -P "$1"
+	! ps -p "$1" >/dev/null 2>&1 && return 0
+	sleep 0.1
+	! ps -p "$1" >/dev/null 2>&1 && return 0
+	sleep 0.3
+	! ps -p "$1" >/dev/null 2>&1 && return 0
+	sleep 2
+	! ps -p "$1" >/dev/null 2>&1 && return 0
+	sleep 6
+	! ps -p "$1" >/dev/null 2>&1 && return 0
+	sleep 9
+	
+	#Kill descendents if parent has not been able to quit.
+	pkill -KILL -P "$1"
+	! ps -p "$1" >/dev/null 2>&1 && return 0
+	sleep 0.1
+	! ps -p "$1" >/dev/null 2>&1 && return 0
+	sleep 0.3
+	! ps -p "$1" >/dev/null 2>&1 && return 0
+	sleep 2
+	
+	#Terminate parent if parent has not been able to quit.
+	kill -TERM "$1"
+	! ps -p "$1" >/dev/null 2>&1 && return 0
+	sleep 0.1
+	! ps -p "$1" >/dev/null 2>&1 && return 0
+	sleep 0.3
+	! ps -p "$1" >/dev/null 2>&1 && return 0
+	sleep 2
+	
+	#Kill parent if parent has not been able to quit.
+	kill KILL "$1"
+	! ps -p "$1" >/dev/null 2>&1 && return 0
+	sleep 0.1
+	! ps -p "$1" >/dev/null 2>&1 && return 0
+	sleep 0.3
+	
+	#Failure to immediately kill parent is an extremely rare, serious error.
+	ps -p "$1" >/dev/null 2>&1 && return 1
+	return 0
+}
+
+#No production use.
+_daemonSendKILL() {
+	pkill -KILL -P "$1"
+	kill -KILL "$1"
+}
+
+#True if any daemon registered process is running.
+_daemonAction() {
+	[[ ! -e "$daemonPidFile" ]] && return 1
+	
+	local currentLine
+	local processedLine
+	local daemonStatus
+	
+	while IFS='' read -r currentLine || [[ -n "$currentLine" ]]; do
+		processedLine=$(echo "$currentLine" | tr -dc '0-9')
+		if [[ "$processedLine" != "" ]] && ps -p "$processedLine" >/dev/null 2>&1
+		then
+			daemonStatus="up"
+			[[ "$1" == "status" ]] && return 0
+			[[ "$1" == "terminate" ]] && _daemonSendTERM "$processedLine"
+			[[ "$1" == "kill" ]] && _daemonSendKILL "$processedLine"
+		fi
+	done < "$daemonPidFile"
+	
+	[[ "$daemonStatus" == "up" ]] && return 0
+	return 1
+}
+
+_daemonStatus() {
+	_daemonAction "status"
+}
+
+#No production use.
+_waitForTermination() {
+	_daemonStatus && sleep 0.1
+	_daemonStatus && sleep 0.3
+	_daemonStatus && sleep 1
+	_daemonStatus && sleep 2
+}
+alias _waitForDaemon=_waitForTermination
+
+#Kills background process using PID file.
+_killDaemon() {
+	#Do NOT proceed if PID values may be invalid.
+	! _readLocked "$daemonPidFile"lk && return 1
+	
+	#Do NOT proceed if daemon is starting (opening).
+	_readLocked "$daemonPidFile"op && return 1
+	
+	! _createLocked "$daemonPidFile"cl && return 1
+	
+	#Do NOT proceed if daemon is starting (opening).
+	_readLocked "$daemonPidFile"op && return 1
+	
+	_daemonAction "terminate"
+	
+	#Do NOT proceed to detele lock/PID files unless daemon can be confirmed down.
+	_daemonStatus && return 1
+	
+	rm -f "$daemonPidFile" >/dev/null 2>&1
+	rm -f "$daemonPidFile"lk
+	rm -f "$daemonPidFile"cl
+	
+	return 0
+}
+
+_cmdDaemon() {
+	export isDaemon=true
+	
+	"$@" &
+	
+	#Any PID which may be part of a daemon may be appended to this file.
+	echo "$!" | _prependDaemonPID
+}
+
+#Executes self in background (ie. as daemon).
+_execDaemon() {
+	#_daemonStatus && return 1
+	
+	_cmdDaemon "$scriptAbsoluteLocation"
+}
+
+_launchDaemon() {
+	_start
+	
+	_killDaemon
+	
+	
+	_execDaemon
+	while _daemonStatus
+	do
+		sleep 5
+	done
+	
+	
+	
+	
+	
+	_stop
+}
+
+#Remote TERM signal wrapper. Verifies script is actually running at the specified PID before passing along signal to trigger an emergency stop.
+#"$1" == pidFile
+#"$2" == sessionid (optional for cleaning up stale systemd files)
+_remoteSigTERM() {
+	[[ ! -e "$1" ]] && [[ "$2" != "" ]] && _unhook_systemd_shutdown "$2"
+	
+	[[ ! -e "$1" ]] && return 0
+	
+	pidToTERM=$(cat "$1")
+	
+	kill -TERM "$pidToTERM"
+	
+	_pauseForProcess "$pidToTERM"
+}
+
+_embed_here() {
+	cat << CZXWXcRMTo8EmM8i4d
+#!/usr/bin/env bash
+
+export scriptAbsoluteLocation="$scriptAbsoluteLocation"
+export scriptAbsoluteFolder="$scriptAbsoluteFolder"
+export sessionid="$sessionid"
+. "$scriptAbsoluteLocation" --embed "\$@"
+CZXWXcRMTo8EmM8i4d
+}
+
+_embed() {
+	export sessionid="$1"
+	"$scriptAbsoluteLocation" --embed "$@"
+}
+
+#"$@" == URL
+_fetch() {
+	if type axel > /dev/null 2>&1
+	then
+		axel "$@"
+		return 0
+	fi
+	
+	wget "$@"
+	
+	return 0
+}
+
+_validatePort() {
+	[[ "$1" -lt "1024" ]] && return 1
+	[[ "$1" -gt "65535" ]] && return 1
+	
+	return 0
+}
+
+_testFindPort() {
+	_getDep ss
+	
+	local machineLowerPort=$(cat /proc/sys/net/ipv4/ip_local_port_range | cut -f1)
+	local machineUpperPort=$(cat /proc/sys/net/ipv4/ip_local_port_range | cut -f2)
+	
+	[[ "$machineLowerPort" -lt "1024" ]] && echo "invalid lower_port" && _stop 1
+	[[ "$machineLowerPort" -lt "32768" ]] && echo "warn: low lower_port"
+	[[ "$machineLowerPort" -gt "32768" ]] && echo "warn: high lower_port"
+	
+	[[ "$machineUpperPort" -gt "65535" ]] && echo "invalid upper_port" && _stop 1
+	[[ "$machineUpperPort" -gt "60999" ]] && echo "warn: high upper_port"
+	[[ "$machineUpperPort" -lt "60999" ]] && echo "warn: low upper_port"
+	
+	local testFoundPort
+	testFoundPort=$(_findPort)
+	! _validatePort "$testFoundPort" && echo "invalid port discovery" && _stop 1
+}
+
+#True if port open (in use).
+_checkPort_local() {
+	[[ "$1" == "" ]] && return 1
+	
+	if ss -lpn | grep ":$1 " > /dev/null 2>&1
+	then
+		return 0
+	fi
+	return 1
+}
+
+#Waits a reasonable time interval for port to be open (in use).
+#"$1" == port
+_waitPort_local() {
+	local checksDone
+	checksDone=0
+	while ! _checkPort_local "$1" && [[ "$checksDone" -lt 72 ]]
+	do
+		let checksDone+=1
+		sleep 0.1
+	done
+	
+	local checksDone
+	checksDone=0
+	while ! _checkPort_local "$1" && [[ "$checksDone" -lt 72 ]]
+	do
+		let checksDone+=1
+		sleep 0.3
+	done
+	
+	local checksDone
+	checksDone=0
+	while ! _checkPort_local "$1" && [[ "$checksDone" -lt 72 ]]
+	do
+		let checksDone+=1
+		sleep 1
+	done
+	
+	return 0
+}
+
+
+#http://unix.stackexchange.com/questions/55913/whats-the-easiest-way-to-find-an-unused-local-port
+_findPort() {
+	local lower_port
+	local upper_port
+	
+	lower_port="$1"
+	upper_port="$2"
+	
+	#Non public ports are between 49152-65535 (2^15 + 2^14 to 2^16 − 1).
+	#Convention is to assign ports 55000-65499 and 50025-53999 to specialized servers.
+	#read lower_port upper_port < /proc/sys/net/ipv4/ip_local_port_range
+	[[ "$lower_port" == "" ]] && lower_port=54000
+	[[ "$upper_port" == "" ]] && upper_port=54999
+	
+	local range_port
+	local rand_max
+	let range_port="upper_port - lower_port"
+	let rand_max="range_port / 2"
+	
+	local portRangeOffset
+	portRangeOffset=$RANDOM
+	#let "portRangeOffset %= 150"
+	let "portRangeOffset %= rand_max"
+	
+	[[ "$opsautoGenerationMode" == "true" ]] && [[ "$lowestUsedPort" == "" ]] && export lowestUsedPort="$lower_port"
+	[[ "$opsautoGenerationMode" == "true" ]] && lower_port="$lowestUsedPort"
+	
+	! [[ "$opsautoGenerationMode" == "true" ]] && let "lower_port += portRangeOffset"
+	
+	while true
+	do
+		for (( currentPort = lower_port ; currentPort <= upper_port ; currentPort++ )); do
+			if ! ss -lpn | grep ":$currentPort " > /dev/null 2>&1
+			then
+				sleep 0.1
+				if ! ss -lpn | grep ":$currentPort " > /dev/null 2>&1
+				then
+					break 2
+				fi
+			fi
+		done
+	done
+	
+	if [[ "$opsautoGenerationMode" == "true" ]]
+	then
+		local nextUsablePort
+		
+		let "nextUsablePort = currentPort + 1"
+		export lowestUsedPort="$nextUsablePort"
+		
+	fi
+	
+	echo "$currentPort"
+	
+	_validatePort "$currentPort"
+}
+
+_test_waitport() {
+	_getDep nmap
+}
+
+#Checks hostname for open port.
+#"$1" == hostname
+#"$2" == port
+_checkPort() {
+	if nmap -Pn "$1" -p "$2" 2> /dev/null | grep open > /dev/null 2>&1
+	then
+		return 0
+	fi
+	return 1
+}
+
+#Waits a reasonable time interval for port to be open.
+#"$1" == hostname
+#"$2" == port
+_waitPort() {
+	_checkPort "$1" "$2" && return 0
+	sleep 0.1
+	_checkPort "$1" "$2" && return 0
+	sleep 0.1
+	_checkPort "$1" "$2" && return 0
+	sleep 0.1
+	_checkPort "$1" "$2" && return 0
+	sleep 0.1
+	_checkPort "$1" "$2" && return 0
+	sleep 0.1
+	_checkPort "$1" "$2" && return 0
+	sleep 0.1
+	_checkPort "$1" "$2" && return 0
+	sleep 0.1
+	_checkPort "$1" "$2" && return 0
+	sleep 0.1
+	_checkPort "$1" "$2" && return 0
+	sleep 0.3
+	_checkPort "$1" "$2" && return 0
+	sleep 0.3
+	_checkPort "$1" "$2" && return 0
+	sleep 0.6
+	
+	local checksDone
+	checksDone=0
+	while ! _checkPort "$1" "$2" && [[ "$checksDone" -lt 72 ]]
+	do
+		let checksDone+=1
+		sleep 1
+	done
+	
+	return 0
+}
+
+#Run command and output to terminal with colorful formatting. Controlled variant of "bash -v".
+_showCommand() {
+	echo -e '\E[1;32;46m $ '"$1"' \E[0m'
+	"$@"
+}
+
+#Validates non-empty request.
+_validateRequest() {
+	echo -e -n '\E[1;32;46m Validating request '"$1"'...	\E[0m'
+	[[ "$1" == "" ]] && echo -e '\E[1;33;41m BLANK \E[0m' && return 1
+	echo "PASS"
+	return
+}
+
+#http://www.commandlinefu.com/commands/view/3584/remove-color-codes-special-characters-with-sed
+_nocolor() {
+	sed -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[m|K]//g"
+}
+
+_noFireJail() {
+	if ( [[ -L /usr/local/bin/"$1" ]] && ls -l /usr/local/bin/"$1" | grep firejail > /dev/null 2>&1 ) || ( [[ -L /usr/bin/"$1" ]] && ls -l /usr/bin/"$1" | grep firejail > /dev/null 2>&1 )
+	then
+		 _messagePlain_bad 'conflict: firejail: '"$1"
+		 return 1
+	fi
+	
+	return 0
+}
+
+#Copy log files to "$permaLog" or current directory (default) for analysis.
+_preserveLog() {
+	if [[ ! -d "$permaLog" ]]
+	then
+		permaLog="$PWD"
+	fi
+	
+	cp "$logTmp"/* "$permaLog"/ > /dev/null 2>&1
+}
+
+_typeDep() {
+	[[ -e /lib/"$1" ]] && return 0
+	[[ -e /lib/x86_64-linux-gnu/"$1" ]] && return 0
+	[[ -e /lib64/"$1" ]] && return 0
+	[[ -e /lib64/x86_64-linux-gnu/"$1" ]] && return 0
+	[[ -e /usr/lib/"$1" ]] && return 0
+	[[ -e /usr/lib/x86_64-linux-gnu/"$1" ]] && return 0
+	[[ -e /usr/local/lib/"$1" ]] && return 0
+	[[ -e /usr/local/lib/x86_64-linux-gnu/"$1" ]] && return 0
+	[[ -e /usr/include/"$1" ]] && return 0
+	[[ -e /usr/local/include/"$1" ]] && return 0
+	
+	if ! type "$1" >/dev/null 2>&1
+	then
+		return 1
+	fi
+	
+	return 0
+}
+
+_wantDep() {
+	_typeDep "$1" && return 0
+	
+	_wantSudo && sudo -n "$scriptAbsoluteLocation" _typeDep "$1" && return 0
+	
+	return 1
+}
+
+_mustGetDep() {
+	_typeDep "$1" && return 0
+	
+	_wantSudo && sudo -n "$scriptAbsoluteLocation" _typeDep "$1" && return 0
+	
+	echo "$1" missing
+	_stop 1
+}
+
+_fetchDep_distro() {
+	if [[ -e /etc/issue ]] && cat /etc/issue | grep 'Debian' > /dev/null 2>&1
+	then
+		_tryExecFull _fetchDep_debian "$@"
+		return
+	fi
+	return 1
+}
+
+_wantGetDep() {
+	_wantDep "$@" && return 0
+	
+	_fetchDep_distro "$@"
+	
+	_wantDep "$@" && return 0
+	return 1
+}
+
+_getDep() {
+	_wantDep "$@" && return 0
+	
+	_fetchDep_distro "$@"
+	
+	_mustGetDep "$@"
+}
+
+#Determines if user is root. If yes, then continue. If not, exits after printing error message.
+_mustBeRoot() {
+if [[ $(id -u) != 0 ]]; then 
+	echo "This must be run as root!"
+	exit
+fi
+}
+alias mustBeRoot=_mustBeRoot
+
+#Determines if sudo is usable by scripts.
+_mustGetSudo() {
+	local rootAvailable
+	rootAvailable=false
+	
+	rootAvailable=$(sudo -n echo true)
+	
+	#[[ $(id -u) == 0 ]] && rootAvailable=true
+	
+	! [[ "$rootAvailable" == "true" ]] && exit 1
+	
+	return 0
+}
+
+#Determines if sudo is usable by scripts. Will not exit on failure.
+_wantSudo() {
+	local rootAvailable
+	rootAvailable=false
+	
+	rootAvailable=$(sudo -n echo true 2> /dev/null)
+	
+	#[[ $(id -u) == 0 ]] && rootAvailable=true
+	
+	! [[ "$rootAvailable" == "true" ]] && return 1
+	
+	return 0
+}
+
+#Returns a UUID in the form of xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+_getUUID() {
+	cat /proc/sys/kernel/random/uuid
+}
+alias getUUID=_getUUID
+
 #####Global variables.
+#Fixed unique identifier for ubiquitious bash created global resources, such as bootdisc images to be automaticaly mounted by guests. Should NEVER be changed.
+export ubiquitiousBashIDnano=uk4u
+export ubiquitiousBashIDshort="$ubiquitiousBashIDnano"PhB6
+export ubiquitiousBashID="$ubiquitiousBashIDshort"63kVcygT0q
 
-#Fixed unique identifier for ubiquitious bash created global resources, such as bootdisc images to be automaticaly mounted by guests. Should NOT be changed.
-export ubiquitiousBashID="uk4uPhB663kVcygT0q"
-
-export sessionid=$(_uid)
-[[ "$sessionid" == "" ]] && exit 1
-export lowsessionid=$(echo -n "$sessionid" | tr A-Z a-z )
-
-#Importing ubiquitous bash into a login shell with "~/.bashrc" is the only known cause for "_getScriptAbsoluteLocation" to return a result such as "/bin/bash".
-if ( [[ "$0" == "/bin/bash" ]] || [[ "$0" == "-bash" ]] || [[ "$0" == "/usr/bin/bash" ]] )  && [[ "${BASH_SOURCE[0]}" != "${0}" ]] && [[ "$profileScriptLocation" != "" ]] && [[ "$profileScriptFolder" != "" ]]
+##Parameters
+#"--shell", ""
+#"--profile"
+#"--parent", "--return", "--devenv"
+#"--call", "--script" "--bypass"
+if [[ "$ub_import_param" == "--profile" ]]
 then
+	ub_import=true
 	export scriptAbsoluteLocation="$profileScriptLocation"
 	export scriptAbsoluteFolder="$profileScriptFolder"
-else
+	export sessionid=$(_uid)
+	_messagePlain_probe_expr 'profile: scriptAbsoluteLocation= '"$scriptAbsoluteLocation"'\n ''profile: scriptAbsoluteFolder= '"$scriptAbsoluteFolder"'\n ''profile: sessionid= '"$sessionid" | _user_log-ub
+elif ([[ "$ub_import_param" == "--parent" ]] || [[ "$ub_import_param" == "--embed" ]] || [[ "$ub_import_param" == "--return" ]] || [[ "$ub_import_param" == "--devenv" ]])  && [[ "$scriptAbsoluteLocation" != "" ]] && [[ "$scriptAbsoluteFolder" != "" ]] && [[ "$sessionid" != "" ]]
+then
+	ub_import=true
+	true #Do not override.
+	_messagePlain_probe_expr 'parent: scriptAbsoluteLocation= '"$scriptAbsoluteLocation"'\n ''parent: scriptAbsoluteFolder= '"$scriptAbsoluteFolder"'\n ''parent: sessionid= '"$sessionid" | _user_log-ub
+elif [[ "$ub_import_param" == "--call" ]] || [[ "$ub_import_param" == "--script" ]] || [[ "$ub_import_param" == "--bypass" ]] || [[ "$ub_import_param" == "--shell" ]] || ([[ "$ub_import" == "true" ]] && [[ "$ub_import_param" == "" ]])
+then
+	ub_import=true
+	export scriptAbsoluteLocation="$importScriptLocation"
+	export scriptAbsoluteFolder="$importScriptFolder"
+	export sessionid=$(_uid)
+	_messagePlain_probe_expr 'call: scriptAbsoluteLocation= '"$scriptAbsoluteLocation"'\n ''call: scriptAbsoluteFolder= '"$scriptAbsoluteFolder"'\n ''call: sessionid= '"$sessionid" | _user_log-ub
+elif [[ "$ub_import" != "true" ]]	#"--shell", ""
+then
 	export scriptAbsoluteLocation=$(_getScriptAbsoluteLocation)
 	export scriptAbsoluteFolder=$(_getScriptAbsoluteFolder)
+	export sessionid=$(_uid)
+	_messagePlain_probe_expr 'default: scriptAbsoluteLocation= '"$scriptAbsoluteLocation"'\n ''default: scriptAbsoluteFolder= '"$scriptAbsoluteFolder"'\n ''default: sessionid= '"$sessionid" | _user_log-ub
+else	#FAIL, implies [[ "$ub_import" == "true" ]]
+	_messagePlain_bad 'import: fall: fail' | _user_log-ub
+	return 1 >/dev/null 2>&1
+	exit 1
 fi
+[[ "$importScriptLocation" != "" ]] && export importScriptLocation=
+[[ "$importScriptFolder" != "" ]] && export importScriptFolder=
+
+[[ ! -e "$scriptAbsoluteLocation" ]] && _messagePlain_bad 'missing: scriptAbsoluteLocation= '"$scriptAbsoluteLocation" | _user_log-ub && exit 1
+[[ "$sessionid" == "" ]] && _messagePlain_bad 'missing: sessionid' | _user_log-ub && exit 1
+
+export lowsessionid=$(echo -n "$sessionid" | tr A-Z a-z )
 
 #Current directory for preservation.
 export outerPWD=$(_getAbsoluteLocation "$PWD")
@@ -610,8 +1775,11 @@ intInitPWD="$PWD"
 
 #Temporary directories.
 export safeTmp="$scriptAbsoluteFolder"/w_"$sessionid"
+export scopeTmp="$scriptAbsoluteFolder"/s_"$sessionid"
 export logTmp="$safeTmp"/log
-export shortTmp=/tmp/w_"$sessionid"	#Solely for misbehaved applications called upon.
+#Solely for misbehaved applications called upon.
+export shortTmp=/tmp/w_"$sessionid"
+
 export scriptBin="$scriptAbsoluteFolder"/_bin
 export scriptBundle="$scriptAbsoluteFolder"/_bundle
 export scriptLib="$scriptAbsoluteFolder"/_lib
@@ -640,18 +1808,31 @@ export scriptTokens="$scriptLocal"/.tokens
 
 #Reboot Detection Token Storage
 # WARNING WIP. Not tested on all platforms. Requires a directory to be tmp/ram fs mounted. Worst case result is to preserve tokens across reboots.
-export bootTmp="$scriptLocal"			#Fail-Safe
-[[ -d /tmp ]] && export bootTmp=/tmp		#Typical BSD
-[[ -d /dev/shm ]] && export bootTmp=/dev/shm	#Typical Linux
+#Fail-Safe
+export bootTmp="$scriptLocal"
+#Typical BSD
+[[ -d /tmp ]] && export bootTmp='/tmp'
+#Typical Linux
+[[ -d /dev/shm ]] && export bootTmp='/dev/shm'
 
 #Specialized temporary directories.
+
+# WARNING: Only one user per (virtual) machine. Requires _prepare_abstract . Not default.
+# DANGER: Mandatory strict directory 8.3 compliance for this variable! Long subdirectory/filenames permitted thereafter.
+# DANGER: Permitting multi-user access to this directory may cause unexpected behavior, including inconsitent file ownership.
+#Consistent absolute path abstraction.
+export abstractfs_root=/tmp/"$ubiquitiousBashIDnano"
+( [[ "$bootTmp" == '/dev/shm' ]] || [[ "$bootTmp" == '/tmp' ]] ) && export abstractfs_root="$bootTmp"/"$ubiquitiousBashIDnano"
+export abstractfs_lock=/"$bootTmp"/"$ubiquitiousBashID"/afslock
+
 # Unusually, safeTmpSSH must not be interpreted by client, and therefore is single quoted.
 # TODO Test safeTmpSSH variants including spaces in path.
 export safeTmpSSH='~/.sshtmp/.s_'"$sessionid"
 
 #Process control.
 export pidFile="$safeTmp"/.pid
-export uPID="cwrxuk6wqzbzV6p8kPS8J4APYGX"	#Invalid do-not-match default.
+#Invalid do-not-match default.
+export uPID="cwrxuk6wqzbzV6p8kPS8J4APYGX"
 
 export daemonPidFile="$scriptLocal"/.bgpid
 
@@ -672,7 +1853,8 @@ export AUTOSSH_GATETIME=15
 
 #Monolithic shared files.
 export lock_pathlock="$scriptLocal"/l_path
-export lock_quicktmp="$scriptLocal"/l_qt	#Used to make locking operations atomic as possible.
+#Used to make locking operations atomic as possible.
+export lock_quicktmp="$scriptLocal"/l_qt
 export lock_emergency="$scriptLocal"/l_em
 export lock_open="$scriptLocal"/l_o
 export lock_opening="$scriptLocal"/l_opening
@@ -746,9 +1928,9 @@ _findUbiquitous() {
 		return 0
 	fi
 	
-	if [[ -e "./_lib/ubiquitous_bash" ]]
+	if [[ -e "$ubiquitiousLibDir"/_lib/ubiquitous_bash ]]
 	then
-		export ubiquitiousLibDir="./_lib/ubiquitous_bash"
+		export ubiquitiousLibDir="$ubiquitiousLibDir"/_lib/ubiquitous_bash
 		return 0
 	fi
 	
@@ -786,6 +1968,7 @@ _init_deps() {
 	export enUb_DosBox=""
 	export enUb_msw=""
 	export enUb_fakehome=""
+	export enUb_abstractfs=""
 	export enUb_buildBash=""
 	export enUb_buildBashUbiquitous=""
 	
@@ -871,36 +2054,43 @@ _deps_virt() {
 }
 
 _deps_chroot() {
+	_deps_notLean
 	_deps_virt
 	export enUb_ChRoot="true"
 }
 
 _deps_qemu() {
+	_deps_notLean
 	_deps_virt
 	export enUb_QEMU="true"
 }
 
 _deps_vbox() {
+	_deps_notLean
 	_deps_virt
 	export enUb_vbox="true"
 }
 
 _deps_docker() {
+	_deps_notLean
 	_deps_virt
 	export enUb_docker="true"
 }
 
 _deps_wine() {
 	_deps_notLean
+	_deps_virt
 	export enUb_wine="true"
 }
 
 _deps_dosbox() {
 	_deps_notLean
+	_deps_virt
 	export enUb_DosBox="true"
 }
 
 _deps_msw() {
+	_deps_notLean
 	_deps_virt
 	_deps_qemu
 	_deps_vbox
@@ -910,7 +2100,14 @@ _deps_msw() {
 
 _deps_fakehome() {
 	_deps_notLean
+	_deps_virt
 	export enUb_fakehome="true"
+}
+
+_deps_abstractfs() {
+	_deps_notLean
+	_deps_virt
+	export enUb_abstractfs="true"
 }
 
 _deps_command() {
@@ -960,6 +2157,7 @@ _generate_bash() {
 	_compile_bash_header
 	
 	_compile_bash_essential_utilities
+	_compile_bash_utilities
 	
 	_compile_bash_vars_global
 	
@@ -1063,6 +2261,7 @@ _compile_bash_deps() {
 		_deps_dosbox
 		_deps_msw
 		_deps_fakehome
+		_deps_abstractfs
 		
 		_deps_git
 		_deps_bup
@@ -1104,6 +2303,7 @@ _compile_bash_deps() {
 		_deps_dosbox
 		_deps_msw
 		_deps_fakehome
+		_deps_abstractfs
 		
 		_deps_git
 		_deps_bup
@@ -1146,6 +2346,7 @@ _compile_bash_header() {
 	export includeScriptList
 	
 	includeScriptList+=( "generic"/minimalheader.sh )
+	includeScriptList+=( "generic"/ubiquitousheader.sh )
 	
 	includeScriptList+=( "os/override"/override.sh )
 	includeScriptList+=( "os/override"/override_prog.sh )
@@ -1169,6 +2370,13 @@ _compile_bash_essential_utilities() {
 	includeScriptList+=( "generic"/uid.sh )
 	includeScriptList+=( "generic/filesystem/permissions"/checkpermissions.sh )
 	includeScriptList+=( "generic"/findInfrastructure.sh )
+	includeScriptList+=( "generic"/gather.sh )
+	
+	includeScriptList+=( "generic/filesystem"/internal.sh )
+	
+	includeScriptList+=( "generic"/messaging.sh )
+	
+	includeScriptList+=( "generic"/config/mustcarry.sh )
 	
 	[[ "$enUb_buildBash" == "true" ]] && includeScriptList+=( "build/bash"/include_bash.sh )
 }
@@ -1197,6 +2405,9 @@ _compile_bash_utilities() {
 	
 	includeScriptList+=( "generic/process"/remotesig.sh )
 	
+	includeScriptList+=( "generic/process"/embed_here.sh )
+	includeScriptList+=( "generic/process"/embed.sh )
+	
 	includeScriptList+=( "generic/net"/fetch.sh )
 	
 	includeScriptList+=( "generic/net"/findport.sh )
@@ -1213,7 +2424,6 @@ _compile_bash_utilities() {
 	[[ "$enUb_proxy" == "true" ]] && includeScriptList+=( "generic/net/proxy/proxyrouter"/proxyrouter.sh )
 	
 	includeScriptList+=( "generic"/showCommand.sh )
-	includeScriptList+=( "generic"/messaging.sh )
 	includeScriptList+=( "generic"/validaterequest.sh )
 	
 	includeScriptList+=( "generic"/preserveLog.sh )
@@ -1247,7 +2457,13 @@ _compile_bash_utilities_virtualization() {
 	[[ "$enUb_virt" == "true" ]] && includeScriptList+=( "virtualization"/osTranslation.sh )
 	[[ "$enUb_virt" == "true" ]] && includeScriptList+=( "virtualization"/localPathTranslation.sh )
 	
+	[[ "$enUb_abstractfs" == "true" ]] && includeScriptList+=( "virtualization/abstractfs"/abstractfs.sh )
+	[[ "$enUb_abstractfs" == "true" ]] && includeScriptList+=( "virtualization/abstractfs"/abstractfsvars.sh )
+	
+	[[ "$enUb_fakehome" == "true" ]] && includeScriptList+=( "virtualization/fakehome"/fakehomemake.sh )
 	[[ "$enUb_fakehome" == "true" ]] && includeScriptList+=( "virtualization/fakehome"/fakehome.sh )
+	[[ "$enUb_fakehome" == "true" ]] && includeScriptList+=( "virtualization/fakehome"/fakehomeuser.sh )
+	includeScriptList+=( "virtualization/fakehome"/fakehomereset.sh )
 	
 	[[ "$enUb_image" == "true" ]] && includeScriptList+=( "virtualization/image"/mountimage.sh )
 	[[ "$enUb_image" == "true" ]] && includeScriptList+=( "virtualization/image"/createImage.sh )
@@ -1299,8 +2515,15 @@ _compile_bash_shortcuts() {
 	
 	[[ "$enUb_notLean" == "true" ]] && includeScriptList+=( "shortcuts/dev"/devsearch.sh )
 	
-	[[ "$enUb_notLean" == "true" ]] && includeScriptList+=( "shortcuts/dev/app"/devemacs.sh )
-	[[ "$enUb_notLean" == "true" ]] && includeScriptList+=( "shortcuts/dev/app"/devatom.sh )
+	[[ "$enUb_fakehome" == "true" ]] && [[ "$enUb_notLean" == "true" ]] && includeScriptList+=( "shortcuts/dev/app"/devemacs.sh )
+	[[ "$enUb_fakehome" == "true" ]] && [[ "$enUb_notLean" == "true" ]] && includeScriptList+=( "shortcuts/dev/app"/devatom.sh )
+	[[ "$enUb_fakehome" == "true" ]] && [[ "$enUb_abstractfs" == "true" ]] && [[ "$enUb_notLean" == "true" ]] && includeScriptList+=( "shortcuts/dev/app"/deveclipse.sh )
+	
+	[[ "$enUb_notLean" == "true" ]] && includeScriptList+=( "shortcuts/dev/scope"/devscope.sh )
+	[[ "$enUb_notLean" == "true" ]] && includeScriptList+=( "shortcuts/dev/scope"/devscope_here.sh )
+	
+	# WARNING: Some apps may have specific dependencies (eg. fakeHome, abstractfs, eclipse, atom).
+	[[ "$enUb_notLean" == "true" ]] && includeScriptList+=( "shortcuts/dev/scope"/devscope_app.sh )
 	
 	[[ "$enUb_git" == "true" ]] && includeScriptList+=( "shortcuts/git"/git.sh )
 	[[ "$enUb_git" == "true" ]] && includeScriptList+=( "shortcuts/git"/gitBare.sh )
@@ -1340,6 +2563,7 @@ _compile_bash_shortcuts() {
 _compile_bash_shortcuts_setup() {
 	export includeScriptList
 	
+	includeScriptList+=( "shortcuts"/setupUbiquitous_here.sh )
 	includeScriptList+=( "shortcuts"/setupUbiquitous.sh )
 }
 
@@ -1443,8 +2667,8 @@ _compile_bash_environment() {
 _compile_bash_installation() {
 	export includeScriptList
 	
-	includeScriptList+=( "structure"/installation_prog.sh )
 	includeScriptList+=( "structure"/installation.sh )
+	includeScriptList+=( "structure"/installation_prog.sh )
 }
 
 _compile_bash_program() {
@@ -1797,7 +3021,8 @@ then
 fi
 
 #Traps, if script is not imported into existing shell, or bypass requested.
-if ! [[ "${BASH_SOURCE[0]}" != "${0}" ]] || ! [[ "$1" != "--bypass" ]]
+# WARNING Exact behavior of this system is critical to some use cases.
+if [[ "$ub_import" != "true" ]] || [[ "$ub_import_param" == "--bypass" ]]
 then
 	trap 'excode=$?; _stop $excode; trap - EXIT; echo $excode' EXIT HUP QUIT PIPE 	# reset
 	trap 'excode=$?; trap "" EXIT; _stop $excode; echo $excode' EXIT HUP QUIT PIPE 	# ignore
@@ -1861,10 +3086,13 @@ _echo() {
 	echo "$@"
 }
 
-#Stop if script is imported into an existing shell and bypass not requested.
-if [[ "${BASH_SOURCE[0]}" != "${0}" ]] && [[ "$1" != "--bypass" ]]
+#Stop if script is imported, parameter not specified, and command not given.
+if [[ "$ub_import" == "true" ]] && [[ "$ub_import_param" == "" ]] && [[ "$1" != '_'* ]]
 then
-	return
+	_messagePlain_warn 'import: missing: parameter, missing: command' | _user_log-ub
+	ub_import=""
+	return 1 > /dev/null 2>&1
+	exit 1
 fi
 
 #Set "ubOnlyMain" in "ops" overrides as necessary.
@@ -1880,12 +3108,14 @@ then
 			internalFunctionExitStatus="$?"
 			
 			#Exit if not imported into existing shell, or bypass requested, else fall through to subsequent return.
-			if ! [[ "${BASH_SOURCE[0]}" != "${0}" ]] || ! [[ "$1" != "--bypass" ]]
+			if [[ "$ub_import" != "true" ]] || [[ "$ub_import_param" == "--bypass" ]]
 			then
 				#export noEmergency=true
 				exit "$internalFunctionExitStatus"
 			fi
-			
+			ub_import=""
+			return "$internalFunctionExitStatus" > /dev/null 2>&1
+			exit "$internalFunctionExitStatus"
 		fi
 	fi
 	
@@ -1898,26 +3128,31 @@ then
 		internalFunctionExitStatus="$?"
 		
 		#Exit if not imported into existing shell, or bypass requested, else fall through to subsequent return.
-		if ! [[ "${BASH_SOURCE[0]}" != "${0}" ]] || ! [[ "$1" != "--bypass" ]]
+		if [[ "$ub_import" != "true" ]] || [[ "$ub_import_param" == "--bypass" ]]
 		then
 			#export noEmergency=true
 			exit "$internalFunctionExitStatus"
 		fi
-		
+		ub_import=""
+		return "$internalFunctionExitStatus" > /dev/null 2>&1
+		exit "$internalFunctionExitStatus"
 		#_stop "$?"
 	fi
 fi
-[[ "$ubOnlyMain" == "true" ]] && export  ubOnlyMain="false"
 
-if ! [[ "$1" != "--bypass" ]]
-then
-	shift
-fi
+[[ "$ubOnlyMain" == "true" ]] && export ubOnlyMain="false"
 
 #Do not continue script execution through program code if critical global variables are not sane.
 [[ ! -e "$scriptAbsoluteLocation" ]] && exit 1
 [[ ! -e "$scriptAbsoluteFolder" ]] && exit 1
 _failExec || exit 1
+
+#Return if script is under import mode, and bypass is not requested.
+if [[ "$ub_import" == "true" ]] && [[ "$ub_import_param" != "--bypass" ]]
+then
+	return 0 > /dev/null 2>&1
+	exit 0
+fi
 
 
 _generate_compile_bash "$@"

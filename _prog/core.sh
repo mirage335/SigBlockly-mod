@@ -211,9 +211,11 @@ _augment() {
 
 #duplicate _anchor
 _refresh_anchors() {
-	_refresh_anchors_ubiquitous
+	#_refresh_anchors_ubiquitous
 	
-	cp -a "$scriptAbsoluteFolder"/_anchor "$scriptAbsoluteFolder"/_construct
-	cp -a "$scriptAbsoluteFolder"/_anchor "$scriptAbsoluteFolder"/_augment
+	#cp -a "$scriptAbsoluteFolder"/_anchor "$scriptAbsoluteFolder"/_construct
+	#cp -a "$scriptAbsoluteFolder"/_anchor "$scriptAbsoluteFolder"/_augment
+	
+	cp -a "$scriptAbsoluteFolder"/_anchor "$scriptAbsoluteFolder"/_refresh_overlay
 }
 
